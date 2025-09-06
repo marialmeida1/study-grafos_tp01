@@ -18,8 +18,8 @@
 
 
 // Grafo - Direcionado & Ponderado
-int main() {
-    WeightedGraph gp(5); // 5 vértices dirigido e ponderados
+/*int main() {
+    WeightedGraph gp(5, true); // 5 vértices dirigido e ponderados
 
     gp.insertEdge(0, 1, 2.5);
     gp.insertEdge(1, 2, 3.1);
@@ -35,8 +35,33 @@ int main() {
     
     std::cout << "Arestas depois da remocao: " << gp.E() << std::endl;
     std::cout << "Existe 1->2? " << (gp.hasEdge(1, 2) ? "Sim" : "Nao") << std::endl;
+    std::cout << "Existe 2->1? " << (gp.hasEdge(2, 1) ? "Sim" : "Nao") << std::endl;
     std::cout << "Existe 2->4? " << (gp.hasEdge(2, 4) ? "Sim" : "Nao") << std::endl;
     std::cout << "Peso de 1->2 " << (gp.getWeight(1,2)) << std::endl;
 
     return 0;
+}*/
+
+// Grafo - Não-Direcionado & Ponderado
+int main() {
+    WeightedGraph gp(5, false); // 5 vértices não direcionado e ponderados
+
+    gp.insertEdge(0, 1, 2.5);
+    gp.insertEdge(1, 2, 3.1);
+    gp.insertEdge(2, 4, 1.8);  
+
+    std::cout << "Vertices: " << gp.V() << std::endl;
+    std::cout << "Arestas: " << gp.E() << std::endl;
+
+    gp.updateWeight(1, 2, 10.0);
+    gp.removeEdge(2, 4);
+
+    std::cout << "Arestas depois da remocao: " << gp.E() << std::endl;
+    std::cout << "Existe 1-2? " << (gp.hasEdge(1, 2) ? "Sim" : "Nao") << std::endl;
+    std::cout << "Existe 2-1? " << (gp.hasEdge(2, 1) ? "Sim" : "Nao") << std::endl;
+    std::cout << "Existe 2-4? " << (gp.hasEdge(2, 4) ? "Sim" : "Nao") << std::endl;
+    std::cout << "Peso de 1-2 " << (gp.getWeight(1,2)) << std::endl;    
+
+    return 0;
 }
+

@@ -8,9 +8,11 @@
 class WeightedGraph : public GraphBase {
 private:
     std::vector<std::vector<WeightedEdge>> adj;
+    bool directed;// é direcionado?
+
 
 public:
-    WeightedGraph(int V);
+    WeightedGraph(int V, bool directed = false);
     ~WeightedGraph();
 
     // Insertion
