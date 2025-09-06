@@ -5,8 +5,8 @@
    Recebe o número de vértices (V) e inicializa:
  - GraphBase(V, true) → grafo com V vértices e marcado como dirigido
  - adj(V) → vetor de listas de adjacência, cada posição representa as arestas de saída de um vértice*/
-WeightedGraph::WeightedGraph(int V)
-    : GraphBase(V, true), adj(V) {}  
+WeightedGraph::WeightedGraph(int V, bool directed)
+    : GraphBase(V, directed), adj(V), directed(directed) {}  
 
 // Destrutor do grafo ponderado
 WeightedGraph::~WeightedGraph() {
@@ -18,6 +18,10 @@ WeightedGraph::~WeightedGraph() {
 void WeightedGraph::insertEdge(int v, int w, double peso) {
     if (!hasEdge(v, w)) {
         adj[v].push_back(WeightedEdge(v, w, peso));
+        numE++;
+    }
+    if (!directed && !hasEdge(w, v)) {
+        adj[w].push_back(WeightedEdge(w, v, peso));
         numE++;
     }
 }
@@ -32,6 +36,15 @@ void WeightedGraph::removeEdge(int v, int w) {
             break;
         }
     }
+    if (!directed) {
+        for (auto it = adj[w].begin(); it != adj[w].end(); ++it) {
+            if (it->w == v) {
+                adj[w].erase(it);
+                numE--;
+                break;
+            }
+        }
+    }
 }
 
 // Atualiza o peso de uma aresta existente v -> w
@@ -41,6 +54,14 @@ bool WeightedGraph::updateWeight(int v, int w, double novoPeso) {
         if (aresta.w == w) {
             aresta.weight = novoPeso;
             return true;
+        }
+    }
+    if(!directed){
+        for (auto& aresta : adj[w]) {
+            if (aresta.w == v) {
+                aresta.weight = novoPeso;
+                return true;
+            }
         }
     }
     return false; // não encontrou a aresta
