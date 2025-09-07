@@ -13,9 +13,17 @@ public:
     Graph(int V, bool directed);
     ~Graph();
 
+    // Inserção e remoção de vértices
+    void insertVertex();
+    void removeVertex(int v);
+
     void insertEdge(int v, int w) override;
+    void removeEdge(int v, int w);
     bool hasEdge(int v, int w) const override;
     bool edge(int v, int w);
+
+    // Impressão do grafo
+    void print() const;
 
     class AdjIterator {
         const Graph& G;
