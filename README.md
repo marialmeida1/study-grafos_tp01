@@ -37,17 +37,17 @@ study-grafos_tp01/
 
 Para compilar e executar o projeto, utilize o seguinte comando no terminal:
 
-**Grafo Não-Ponderado e Não-Direcionado**
+**Grafo Não-Ponderado**
 
 ```bash
 g++ -Iinclude src/main.cpp src/Graph.cpp -o main
 ./main
 ``` 
 
-**Grafo Ponderado e Direcionado**
+**Todos os Grafos**
 
 ```bash
-g++ -Iinclude src/main.cpp src/Graph.cpp src/WeightedGraph.cpp -o main
+g++ -DWEIGHTED_GRAPH -Iinclude src/main.cpp src/Graph.cpp src/WeightedGraph.cpp -o main
 ./main
 ``` 
 

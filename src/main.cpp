@@ -1,101 +1,64 @@
 #include <iostream>
 #include "Graph.h"
+
+// This preprocessor directive checks if WEIGHTED_GRAPH has been defined during compilation.
+// If so, it includes the necessary header for the WeightedGraph class.
+#ifdef WEIGHTED_GRAPH
 #include "WeightedGraph.h"
-using namespace std;
+#endif
 
-// Grafo - Não-Direcionado & Não-Ponderado
-/*int main() {
-    Graph g(5, false); // Undirected graph with 5 vertices
-    g.insertEdge(0, 1);
-    g.insertEdge(0, 2);
+// --- Test function for Unweighted Graphs ---
+void testUnweightedGraphs() {
+    std::cout << "\n--- Testing Unweighted, Directed Graph ---" << std::endl;
+    Graph g_dir(5, true);
+    g_dir.insertEdge(0, 1);
+    g_dir.insertEdge(0, 2);
+    std::cout << "Initial Directed Graph:" << std::endl;
+    g_dir.print();
+    std::cout << "Edge 0->1? " << (g_dir.hasEdge(0, 1) ? "Yes" : "No") << std::endl;
+    std::cout << "Edge 1->0? " << (g_dir.hasEdge(1, 0) ? "Yes" : "No") << std::endl;
 
-    std::cout << "Number of vertices: " << g.V() << std::endl;
-    std::cout << "Number of edges: " << g.E() << std::endl;
-    std::cout << "Edge between 0 and 1? " << (g.hasEdge(0, 1) ? "Yes" : "No") << std::endl;
-    std::cout << "Edge between 1 and 2? " << (g.hasEdge(1, 2) ? "Yes" : "No") << std::endl;
-
-    return 0;
-}*/
-
-// Grafo - Direcionado & Não-Ponderado
-int main()
-{
-    Graph g(5, true); // Grafo direcionado com 5 vértices
-
-    g.insertEdge(0, 1);
-    g.insertEdge(0, 2);
-    g.insertEdge(1, 3);
-    g.insertEdge(3, 4);
-
-    cout << "Vértices: " << g.V() << endl;
-    cout << "Arestas: " << g.E() << endl;
-
-    cout << "Existe 0->1? " << (g.hasEdge(0, 1) ? "Sim" : "Nao") << endl;
-    cout << "Existe 1->0? " << (g.hasEdge(1, 0) ? "Sim" : "Nao") << endl;
-
-    g.print();
-
-    g.insertVertex();
-    cout << "Após inserir vértice, total: " << g.V() << endl;
-    g.print();
-    cout << "Existe 0->2? " << (g.hasEdge(0, 2) ? "Sim" : "Nao") << endl;
-
-    g.removeEdge(0, 2);
-    cout << "Após remover aresta 0->2, total de arestas: " << g.E() << endl;
-    g.print();
-    cout << "Existe 0->2? " << (g.hasEdge(0, 2) ? "Sim" : "Nao") << endl;
-
-    g.removeVertex(3);
-    cout << "Após remover vértice 3, total de vértices: " << g.V() << endl;
-    g.print();
-
-    return 0;
+    std::cout << "\n--- Testing Unweighted, Undirected Graph ---" << std::endl;
+    Graph g_undir(5, false);
+    g_undir.insertEdge(0, 1);
+    g_undir.insertEdge(0, 2);
+    std::cout << "Initial Undirected Graph:" << std::endl;
+    g_undir.print();
+    std::cout << "Edge 0-1? " << (g_undir.hasEdge(0, 1) ? "Yes" : "No") << std::endl;
+    std::cout << "Edge 1-0? " << (g_undir.hasEdge(1, 0) ? "Yes" : "No") << std::endl;
 }
 
-// Grafo - Direcionado & Ponderado
-/*int main() {
-    WeightedGraph gp(5, true); // 5 vértices dirigido e ponderados
 
-    gp.insertEdge(0, 1, 2.5);
-    gp.insertEdge(1, 2, 3.1);
-    gp.insertEdge(2, 4, 1.8);
+// --- Test function for Weighted Graphs ---
+// This entire function will only be included in the program if WEIGHTED_GRAPH is defined.
+#ifdef WEIGHTED_GRAPH
+void testWeightedGraphs() {
+    std::cout << "\n--- Testing Weighted, Directed Graph ---" << std::endl;
+    WeightedGraph wg_dir(5, true);
+    wg_dir.insertEdge(0, 1, 2.5);
+    wg_dir.insertEdge(1, 2, 3.1);
+    std::cout << "Weight of 0->1: " << wg_dir.getWeight(0, 1) << std::endl;
+    std::cout << "Weight of 1->0: " << wg_dir.getWeight(1, 0) << " (should be -1 as it doesn't exist)" << std::endl;
+
+    std::cout << "\n--- Testing Weighted, Undirected Graph ---" << std::endl;
+    WeightedGraph wg_undir(5, false);
+    wg_undir.insertEdge(0, 1, 2.5);
+    wg_undir.insertEdge(1, 2, 3.1);
+    std::cout << "Weight of 0-1: " << wg_undir.getWeight(0, 1) << std::endl;
+    std::cout << "Weight of 1-0: " << wg_undir.getWeight(1, 0) << std::endl;
+}
+#endif
 
 
-    std::cout << "Vertices: " << gp.V() << std::endl;
-    std::cout << "Arestas: " << gp.E() << std::endl;
+int main() {
+    std::cout << "--- Running Graph Tests ---" << std::endl;
+    testUnweightedGraphs();
 
-    gp.updateWeight(1, 2, 10.0);
-    gp.removeEdge(2, 4);
+    // The call to testWeightedGraphs() is also wrapped, so it only runs if compiled for it.
+    #ifdef WEIGHTED_GRAPH
+    testWeightedGraphs();
+    #endif
 
-
-    std::cout << "Arestas depois da remocao: " << gp.E() << std::endl;
-    std::cout << "Existe 1->2? " << (gp.hasEdge(1, 2) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Existe 2->1? " << (gp.hasEdge(2, 1) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Existe 2->4? " << (gp.hasEdge(2, 4) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Peso de 1->2 " << (gp.getWeight(1,2)) << std::endl;
-
+    std::cout << "\n--- Tests Finished ---" << std::endl;
     return 0;
-}*/
-
-// Grafo - Não-Direcionado & Ponderado
-/* int main() {
-    WeightedGraph gp(5, false); // 5 vértices não direcionado e ponderados
-
-    gp.insertEdge(0, 1, 2.5);
-    gp.insertEdge(1, 2, 3.1);
-    gp.insertEdge(2, 4, 1.8);
-
-    std::cout << "Vertices: " << gp.V() << std::endl;
-    std::cout << "Arestas: " << gp.E() << std::endl;
-
-    gp.updateWeight(1, 2, 10.0);
-    gp.removeEdge(2, 4);
-
-    std::cout << "Arestas depois da remocao: " << gp.E() << std::endl;
-    std::cout << "Existe 1-2? " << (gp.hasEdge(1, 2) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Existe 2-1? " << (gp.hasEdge(2, 1) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Existe 2-4? " << (gp.hasEdge(2, 4) ? "Sim" : "Nao") << std::endl;
-    std::cout << "Peso de 1-2 " << (gp.getWeight(1,2)) << std::endl;
-
-    return 0;
-} */
+}
