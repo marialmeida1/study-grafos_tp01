@@ -6,16 +6,14 @@
 const double INF = std::numeric_limits<double>::infinity();
 
 TarjanMST::TarjanMST(const WeightedGraph& graph) : numVertices(graph.V()) {
-    // Extrair todas as arestas do grafo ponderado
+    
+    // Extrair todas as arestas do grafo
     for (int v = 0; v < numVertices; v++) {
-        WeightedGraph::AdjIterator it(graph, v);
-        WeightedEdge edge = it.begin();
-        
-        while (!it.end()) {
-            if (edge.v != -1 && edge.w != -1) {
-                edges.push_back(TarjanEdge(edge.v, edge.w, edge.weight));
+        for (int w = 0; w < numVertices; w++) {
+            if (graph.hasEdge(v, w)) {
+                double weight = graph.getWeight(v, w);
+                edges.push_back(TarjanEdge(v, w, weight));
             }
-            edge = it.next();
         }
     }
     
