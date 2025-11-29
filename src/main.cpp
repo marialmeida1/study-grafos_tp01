@@ -5,6 +5,7 @@
 // If so, it includes the necessary header for the WeightedGraph class.
 #ifdef WEIGHTED_GRAPH
 #include "WeightedGraph.h"
+#include "TarjanMST.h"
 #endif
 
 // --- Test function for Unweighted Graphs ---
@@ -47,6 +48,37 @@ void testWeightedGraphs() {
     std::cout << "Weight of 0-1: " << wg_undir.getWeight(0, 1) << std::endl;
     std::cout << "Weight of 1-0: " << wg_undir.getWeight(1, 0) << std::endl;
 }
+
+void testTarjanMST() {
+    std::cout << "\n--- Testing Tarjan MST Algorithm ---" << std::endl;
+    
+    // Criar um grafo direcionado ponderado para teste
+    WeightedGraph graph(4, true);
+    
+    // Adicionar arestas
+    graph.insertEdge(0, 1, 5.0);
+    graph.insertEdge(0, 2, 3.0);
+    graph.insertEdge(1, 2, 2.0);
+    graph.insertEdge(1, 3, 4.0);
+    graph.insertEdge(2, 3, 1.0);
+    graph.insertEdge(3, 0, 6.0);
+    
+    std::cout << "Grafo de teste criado com 4 vértices." << std::endl;
+    
+    // Executar algoritmo de Tarjan
+    TarjanMST tarjan(graph);
+    
+    // Testar com raiz 0
+    std::cout << "\nCalculando arborescência com raiz 0:" << std::endl;
+    std::vector<TarjanEdge> mst = tarjan.findMinimumSpanningArborescence(0);
+    tarjan.printArborescence(mst);
+    
+    // Testar com raiz 1
+    std::cout << "\nCalculando arborescência com raiz 1:" << std::endl;
+    TarjanMST tarjan2(graph);
+    std::vector<TarjanEdge> mst2 = tarjan2.findMinimumSpanningArborescence(1);
+    tarjan2.printArborescence(mst2);
+}
 #endif
 
 
@@ -57,6 +89,7 @@ int main() {
     // The call to testWeightedGraphs() is also wrapped, so it only runs if compiled for it.
     #ifdef WEIGHTED_GRAPH
     testWeightedGraphs();
+    testTarjanMST();
     #endif
 
     std::cout << "\n--- Tests Finished ---" << std::endl;
