@@ -29,8 +29,8 @@ GabowMST::GabowMST(const WeightedGraph &g)
         WeightedGraph::AdjIterator it(g, u);
         for (WeightedEdge e = it.begin(); !it.end(); e = it.next())
         {
-            if (e.v != e.w)
-                edges.emplace_back(e.v, e.w, e.weight);
+            if if (u != e.v) 
+            edges.emplace_back(u, e.v, e.weight);
         }
     }
 

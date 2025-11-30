@@ -53,14 +53,14 @@ void printARB(const vector<GabowEdge>& arb) {
  * Caso 1: Grafo simples sem ciclos.
  */
 void test_simple_no_cycle() {
-    cout << "[TESTE 1] Grafo simples sem ciclos...\n";
+    cout << "[TESTE 1] Grafo simples sem ciclos NOVO CODI...\n";
 
-    WeightedGraph g(4);
-    g.addEdge(0, 1, 1);
-    g.addEdge(0, 2, 5);
-    g.addEdge(1, 2, 1);
-    g.addEdge(1, 3, 2);
-    g.addEdge(2, 3, 1);
+    WeightedGraph g(4, true);
+    g.insertEdge(0, 1, 1.0);
+    g.insertEdge(0, 2, 5.0);
+    g.insertEdge(1, 2, 1.0);
+    g.insertEdge(1, 3, 2.0);
+    g.insertEdge(2, 3, 1.0);
 
     GabowMST mst(g);
     auto arb = mst.compute(0);
@@ -82,11 +82,11 @@ void test_simple_no_cycle() {
 void test_simple_cycle() {
     cout << "[TESTE 2] Ciclo simples 1->2->3->1...\n";
 
-    WeightedGraph g(4);
-    g.addEdge(0, 1, 5);
-    g.addEdge(1, 2, 2);
-    g.addEdge(2, 3, 2);
-    g.addEdge(3, 1, 1);   // ciclo 1 → 2 → 3 → 1
+    WeightedGraph g(4, true);
+    g.insertEdge(0, 1, 5.0);
+    g.insertEdge(1, 2, 2.0);
+    g.insertEdge(2, 3, 2.0);
+    g.insertEdge(3, 1, 1.0);
 
     GabowMST mst(g);
     auto arb = mst.compute(0);
@@ -104,17 +104,17 @@ void test_simple_cycle() {
 void test_multiple_cycles() {
     cout << "[TESTE 3] Vários ciclos aninhados...\n";
 
-    WeightedGraph g(6);
+    WeightedGraph g(6, true);
 
-    g.addEdge(0, 1, 3);
-    g.addEdge(1, 2, 2);
-    g.addEdge(2, 0, 4); // ciclo A
+    g.insertEdge(0, 1, 3.0);
+    g.insertEdge(1, 2, 2.0);
+    g.insertEdge(2, 0, 4.0);
 
-    g.addEdge(2, 3, 1);
-    g.addEdge(3, 4, 1);
-    g.addEdge(4, 2, 1); // ciclo B
+    g.insertEdge(2, 3, 1.0);
+    g.insertEdge(3, 4, 1.0);
+    g.insertEdge(4, 2, 1.0);
 
-    g.addEdge(4, 5, 2);
+    g.insertEdge(4, 5, 2.0);
 
     GabowMST mst(g);
     auto arb = mst.compute(0);
@@ -132,13 +132,13 @@ void test_multiple_cycles() {
 void test_zero_weights() {
     cout << "[TESTE 4] Arestas com peso zero...\n";
 
-    WeightedGraph g(5);
+    WeightedGraph g(5, true);
 
-    g.addEdge(0, 1, 0);
-    g.addEdge(1, 2, 0);
-    g.addEdge(2, 3, 1);
-    g.addEdge(3, 4, 0);
-    g.addEdge(4, 1, 0); // ciclo com pesos zero
+    g.insertEdge(0, 1, 0.0);
+    g.insertEdge(1, 2, 0.0);
+    g.insertEdge(2, 3, 1.0);
+    g.insertEdge(3, 4, 0.0);
+    g.insertEdge(4, 1, 0.0);
 
     GabowMST mst(g);
     auto arb = mst.compute(0);
@@ -157,13 +157,13 @@ void test_large_graph() {
     cout << "[TESTE 5] Grafo grande randomizado...\n";
 
     int n = 300;
-    WeightedGraph g(n);
+    WeightedGraph g(n, true);
 
     for (int i = 0; i < n * 5; i++) {
         int u = rand() % n;
         int v = rand() % n;
         if (u != v)
-            g.addEdge(u, v, (rand() % 100));
+            g.insertEdge(u, v, (double)(rand() % 100));
     }
 
     GabowMST mst(g);
