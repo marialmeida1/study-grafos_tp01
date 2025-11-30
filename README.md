@@ -6,7 +6,13 @@ Este projeto é um trabalho de grupo da disciplina **Teoria de Grafos e Computab
 
 ## Explicação Básica
 
-O programa implementa grafos não direcionados e não ponderados, permitindo a criação de vértices e arestas, além de operações básicas de manipulação e consulta da estrutura do grafo.
+O programa implementa estruturas de grafos direcionados e não direcionados, tanto ponderados quanto não ponderados, permitindo a criação de vértices e arestas, além de operações básicas de manipulação e consulta da estrutura do grafo.
+
+### Algoritmos Implementados
+
+- **Algoritmo de Tarjan**: Para encontrar árvores geradoras mínimas em grafos direcionados
+- **Algoritmo de Edmonds**: Para encontrar árvores geradoras mínimas em grafos direcionados  
+- **Algoritmo de Gabow**: Para encontrar árvores geradoras mínimas em grafos direcionados
 
 ---
 
@@ -17,6 +23,7 @@ O projeto está organizado da seguinte forma:
 ```
 study-grafos_tp01/
 ├─ include/
+<<<<<<< HEAD
 │ ├─ Edge.h # Definição da classe Aresta
 │ ├─ Graph.h # Definição da classe Grafo
 │ ├─ GraphBase.h # Classes base ou utilitárias
@@ -31,12 +38,34 @@ study-grafos_tp01/
 │ ├─ TarjanMST.cpp
 │ └─ main.cpp # Função principal do programa
 └─ main # Executável gerado após compilação
+=======
+│ ├─ Edge.h              # Definição da classe Aresta básica
+│ ├─ WeightedEdge.h      # Definição da classe Aresta ponderada
+│ ├─ Graph.h             # Definição da classe Grafo básico
+│ ├─ WeightedGraph.h     # Definição da classe Grafo ponderado
+│ ├─ GraphBase.h         # Classes base ou utilitárias
+│ ├─ TarjanMST.h         # Algoritmo de Tarjan para MST direcionada
+│ ├─ EdmondsMST.h        # Algoritmo de Edmonds para MST direcionada
+│ └─ GabowMST.h          # Algoritmo de Gabow para MST direcionada
+├─ src/
+│ ├─ Graph.cpp           # Implementação da classe Grafo básico
+│ ├─ WeightedGraph.cpp   # Implementação da classe Grafo ponderado
+│ ├─ TarjanMST.cpp       # Implementação do algoritmo de Tarjan
+│ ├─ EdmondsMST.cpp      # Implementação do algoritmo de Edmonds
+│ ├─ GabowMST.cpp        # Implementação do algoritmo de Gabow
+│ ├─ main.cpp            # Função principal do programa
+│ ├─ tests/              # Arquivos de teste
+│ └─ output/             # Arquivos executáveis gerados
+├─ documentacao/         # Documentação do projeto
+├─ output/               # Saída de compilação
+└─ README.md             # Este arquivo
+>>>>>>> d1dd85cb6c6f6a11b2547d14eb859a616877f792
 ```
 
-
-- **include/**: Contém todos os arquivos de cabeçalho (.h) usados no projeto.
-- **src/**: Contém os arquivos de implementação (.cpp) e o arquivo `main.cpp`.
-- **main**: Executável gerado após a compilação.
+- **include/**: Contém todos os arquivos de cabeçalho (.h) do projeto, incluindo classes de grafos e algoritmos de MST.
+- **src/**: Contém os arquivos de implementação (.cpp), testes e executáveis gerados.
+- **documentacao/**: Contém a documentação técnica do projeto e especificações dos trabalhos.
+- **output/**: Diretório para arquivos de saída da compilação.
 
 ---
 
@@ -44,23 +73,19 @@ study-grafos_tp01/
 
 Para compilar e executar o projeto, utilize o seguinte comando no terminal:
 
-**Grafo Não-Ponderado**
+```
+make
+```
 
-```bash
-g++ -Iinclude src/main.cpp src/Graph.cpp -o main
-./main
-``` 
+Escolha o teste que deseja rodar
 
-**Todos os Grafos**
-
-```bash
-g++ -DWEIGHTED_GRAPH -Iinclude src/main.cpp src/Graph.cpp src/WeightedGraph.cpp -o main
-./main
-``` 
-
-* -Iinclude adiciona a pasta include ao caminho de busca dos arquivos de cabeçalho.
-* `src/main.cpp` `src/Graph.cpp` `src/WeightedGraph.cpp` são os arquivos de implementação.
-* -o main especifica o nome do executável.
+```
+./bin/main
+```
+```
+./bin/test_tarjan
+```
+....
 
 ## Integrantes
 
