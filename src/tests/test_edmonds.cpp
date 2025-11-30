@@ -3,7 +3,7 @@
 #include <chrono>
 #include "WeightedGraph.h"
 #include "EdmondsMST.h"
-
+#include <cmath>
 /*
  * Testes automáticos mínimos para Edmonds:
  * - caso 1: grafo simples (sem ciclos)
@@ -29,7 +29,7 @@ void test_simple()
     auto arb = ed.compute(0);
     ed.printArborescence(arb);
 
-    assert(std::abs(ed.getTotalWeight() - 2.0) < 1e-9);
+    assert(std::fabs(ed.getTotalWeight() - 2.0) < 1e-9);
     std::cout << "[OK] Grafo simples\n";
 }
 
@@ -52,7 +52,7 @@ void test_cycle_simple()
 
     // Esperado: peso 8.0 (0->1(5),1->2(2),2->3(1))
     double expected = 8.0;
-    assert(std::abs(ed.getTotalWeight() - expected) < 1e-6);
+    assert(std::fabs(ed.getTotalWeight() - expected) < 1e-6);
     std::cout << "[OK] Ciclo simples\n";
 }
 

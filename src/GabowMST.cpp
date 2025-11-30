@@ -46,15 +46,15 @@ GabowMST::GabowMST(const WeightedGraph &g)
 static std::vector<GabowEdge> gabow(int N, int root, const std::vector<GabowEdge> &E)
 {
     const double INF = std::numeric_limits<double>::infinity();
-    std::vector<GabowEdge> result;
-
     if (N == 0)
-        return result;
+        return {};
 
     std::vector<GabowEdge> curE = E;
     int curN = N;
 
-    std::vector<GabowEdge> chosen; // arestas escolhidas em cada contração
+    // Histórico da reconstrução
+    std::vector<std::vector<int>> ids_hist;          // mapeamento dos nós após cada contração
+    std::vector<std::vector<GabowEdge>> pre_hist;    // arestas escolhidas em cada estágio
 
     while (true)
     {
@@ -75,14 +75,14 @@ static std::vector<GabowEdge> gabow(int N, int root, const std::vector<GabowEdge
         inW[root] = 0;
         pre[root] = -1;
 
-        // Algum vértice (exceto raiz) sem aresta entrante → impossível
+        // Algum vértice sem aresta entrante → impossível
         for (int v = 0; v < curN; ++v)
         {
             if (v != root && inW[v] == INF)
                 return {};
         }
 
-        // 2) Detectar ciclos usando pred[]
+        // 2) Detectar ciclos
         std::vector<int> id(curN, -1), vis(curN, -1);
         int comps = 0;
 
@@ -98,7 +98,6 @@ static std::vector<GabowEdge> gabow(int N, int root, const std::vector<GabowEdge
                 u = pre[u];
             }
 
-            // encontrou ciclo
             if (u != root && id[u] == -1 && vis[u] == v)
             {
                 for (int x = pre[u]; x != u; x = pre[x])
@@ -107,30 +106,36 @@ static std::vector<GabowEdge> gabow(int N, int root, const std::vector<GabowEdge
             }
         }
 
-        // Sem ciclos → retorna as escolhas feitas
+        // 3) Se não houve ciclos → registrar último mapeamento e parar
         if (comps == 0)
         {
             for (int v = 0; v < curN; ++v)
-            {
-                if (v != root)
-                    result.emplace_back(pre[v], v, inW[v]);
-            }
-            return result;
+                if (id[v] == -1)
+                    id[v] = comps++;
+
+            ids_hist.push_back(id);
+            pre_hist.push_back({}); // último nível não tem preds próprios
+
+            break; // termina a fase de contração
         }
 
-        // 3) Atribui ids únicos aos vértices fora de ciclos
+        // Atribui ids aos vértices fora dos ciclos
         for (int v = 0; v < curN; ++v)
             if (id[v] == -1)
                 id[v] = comps++;
 
-        int newN = comps;
-
-        // Guarda todas as arestas pre[v] → v escolhidas nesta fase
+        // Guardar os preds deste estágio
+        std::vector<GabowEdge> chosen;
+        chosen.reserve(curN - 1);
         for (int v = 0; v < curN; ++v)
             if (v != root)
                 chosen.emplace_back(pre[v], v, inW[v]);
 
-        // 4) Constrói novo grafo (ciclos contraídos)
+        ids_hist.push_back(id);
+        pre_hist.push_back(chosen);
+
+        // 4) Constrói grafo contraído
+        int newN = comps;
         std::vector<GabowEdge> newE;
         newE.reserve(curE.size());
 
@@ -142,11 +147,55 @@ static std::vector<GabowEdge> gabow(int N, int root, const std::vector<GabowEdge
                 newE.emplace_back(u, v, e.weight - inW[e.to]);
         }
 
-        // Atualiza o grafo para próxima iteração
+        // Atualiza para próxima iteração
         root = id[root];
         curN = newN;
         curE.swap(newE);
     }
+
+    // ===========================================
+    //     FASE FINAL — RECONSTRUÇÃO DA MSA
+    // ===========================================
+
+    std::vector<int> cur_id = ids_hist.back();
+    std::vector<GabowEdge> finalTree;
+
+    // processa mapeamentos do último para o primeiro
+    for (int step = (int)ids_hist.size() - 2; step >= 0; --step)
+    {
+        const auto &prev_id = ids_hist[step];
+        const auto &preds = pre_hist[step];
+
+        // expande todas as arestas escolhidas deste nível
+        for (auto &edge : preds)
+        {
+            int u = edge.from;
+            int v = edge.to;
+
+            // só adiciona se o nó ainda é válido após expansões
+            if (cur_id[v] == v)
+                finalTree.emplace_back(u, v, edge.weight);
+        }
+
+        // atualiza cur_id (desfazendo contração)
+        std::vector<int> new_map(prev_id.size());
+        for (int i = 0; i < (int)prev_id.size(); ++i)
+        {
+            new_map[i] = cur_id[ prev_id[i] ];
+        }
+        cur_id = new_map;
+    }
+
+    // remove duplicatas
+    std::sort(finalTree.begin(), finalTree.end(), [](const GabowEdge &a, const GabowEdge &b)
+              { return (a.to < b.to) || (a.to == b.to && a.from < b.from); });
+
+    finalTree.erase(std::unique(finalTree.begin(), finalTree.end(),
+                                [](const GabowEdge &a, const GabowEdge &b)
+                                { return a.from == b.from && a.to == b.to; }),
+                    finalTree.end());
+
+    return finalTree;
 }
 
 /*
