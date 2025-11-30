@@ -3,6 +3,7 @@
 #include <chrono>
 #include "WeightedGraph.h"
 #include "EdmondsMST.h"
+#include <cmath>
 
 /*
  * Testes automáticos mínimos para Edmonds:

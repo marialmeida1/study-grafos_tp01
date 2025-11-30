@@ -8,7 +8,7 @@ const double INF = std::numeric_limits<double>::infinity();
 TarjanMST::TarjanMST(const WeightedGraph& graph) : numVertices(graph.V()) {
     
     // Extrair todas as arestas do grafo
-    for (int v = 0; v < numVertices; v++) {
+/*     for (int v = 0; v < numVertices; v++) {
         for (int w = 0; w < numVertices; w++) {
             if (graph.hasEdge(v, w)) {
                 double weight = graph.getWeight(v, w);
@@ -22,7 +22,22 @@ TarjanMST::TarjanMST(const WeightedGraph& graph) : numVertices(graph.V()) {
     parent.resize(numVertices, -1);
     id.resize(numVertices, -1);
     visit.resize(numVertices, -1);
+    inCycle.resize(numVertices, -1); */
+
+    // Inicializar estruturas auxiliares
+    minCost.resize(numVertices, std::numeric_limits<double>::infinity());
+    parent.resize(numVertices, -1);
+    id.resize(numVertices, -1);
+    visit.resize(numVertices, -1);
     inCycle.resize(numVertices, -1);
+
+    // CORREÇÃO DE PERFORMANCE
+    for (int u = 0; u < numVertices; ++u) {
+        WeightedGraph::AdjIterator it(graph, u);
+        for (auto edge = it.begin();!it.end(); edge = it.next()) {
+            edges.push_back(TarjanEdge(u, edge.w, edge.weight));
+        }
+    }
 }
 
 std::vector<TarjanEdge> TarjanMST::findMinimumSpanningArborescence(int root) {
