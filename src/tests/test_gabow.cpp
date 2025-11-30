@@ -4,8 +4,8 @@
 
 #include "WeightedGraph.h"
 #include "GabowMST.h"
-#include <cmath>
-#include <functional>
+#include <functional> // <-- para std::function
+#include <cmath>      // <-- para fabs
 
 using namespace std;
 
@@ -15,31 +15,39 @@ bool isValidArborescence(int n, int root, const vector<GabowEdge>& arb) {
     if ((int)arb.size() != n - 1) return false;
 
     vector<int> parent(n, -1);
+    vector<vector<int>> adj(n);
 
+    // Verifica pais e monta a adjacência
     for (auto& e : arb) {
         if (e.to < 0 || e.to >= n) return false;
         if (e.from < 0 || e.from >= n) return false;
         if (e.to == root) return false;        // raiz não pode ter pai
-        if (parent[e.to] != -1) return false;  // vértice com 2 pais → impossível
+        if (parent[e.to] != -1) return false;  // 2 pais → inválido
+
         parent[e.to] = e.from;
+        adj[e.from].push_back(e.to);
     }
 
-    // detectar ciclo via DFS
+    // DFS para detectar ciclo
     vector<int> vis(n, 0);
 
     function<bool(int)> dfs = [&](int u) {
         vis[u] = 1;
-        for (auto &e : arb) {
-            if (e.from == u) {
-                if (vis[e.to] == 1) return false; // ciclo
-                if (vis[e.to] == 0 && !dfs(e.to)) return false;
-            }
+        for (int v : adj[u]) {
+            if (vis[v] == 1) return false; // ciclo
+            if (vis[v] == 0 && !dfs(v)) return false;
         }
         vis[u] = 2;
         return true;
     };
 
-    return dfs(root);
+    if (!dfs(root)) return false;
+
+    // Todos os vértices devem ser alcançáveis da raiz
+    for (int i = 0; i < n; i++)
+        if (vis[i] == 0) return false;
+
+    return true;
 }
 
 void printARB(const vector<GabowEdge>& arb) {
@@ -53,7 +61,7 @@ void printARB(const vector<GabowEdge>& arb) {
  * Caso 1: Grafo simples sem ciclos.
  */
 void test_simple_no_cycle() {
-    cout << "[TESTE 1] Grafo simples sem ciclos NOVO CODI...\n";
+    cout << "[TESTE 1] Grafo simples sem ciclos...\n";
 
     WeightedGraph g(4, true);
     g.insertEdge(0, 1, 1.0);

@@ -27,10 +27,9 @@ GabowMST::GabowMST(const WeightedGraph &g)
 
     for (int u = 0; u < n; ++u) {
         WeightedGraph::AdjIterator it(g, u);
-        for (WeightedEdge e = it.begin(); !it.end(); e = it.next())
-        {
-            if if (u != e.v) 
-            edges.emplace_back(u, e.v, e.weight);
+        for (WeightedEdge e = it.begin(); !it.end(); e = it.next()) {
+            if (e.v != e.w) // ignora laços
+                edges.emplace_back(e.v, e.w, e.weight);
         }
     }
 
