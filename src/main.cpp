@@ -52,32 +52,80 @@ void testWeightedGraphs() {
 void testTarjanMST() {
     std::cout << "\n--- Testing Tarjan MST Algorithm ---" << std::endl;
     
-    // Criar um grafo direcionado ponderado para teste
-    WeightedGraph graph(4, true);
+    // Teste 1: Grafo sem ciclos (caso simples)
+    std::cout << "\n=== TESTE 1: Grafo sem ciclos ===" << std::endl;
+    WeightedGraph graph1(4, true);
     
     // Adicionar arestas
-    graph.insertEdge(0, 1, 5.0);
-    graph.insertEdge(0, 2, 3.0);
-    graph.insertEdge(1, 2, 2.0);
-    graph.insertEdge(1, 3, 4.0);
-    graph.insertEdge(2, 3, 1.0);
-    graph.insertEdge(3, 0, 6.0);
+    graph1.insertEdge(0, 1, 5.0);
+    graph1.insertEdge(0, 2, 3.0);
+    graph1.insertEdge(1, 2, 2.0);
+    graph1.insertEdge(1, 3, 4.0);
+    graph1.insertEdge(2, 3, 1.0);
+    graph1.insertEdge(3, 0, 6.0);
     
     std::cout << "Grafo de teste criado com 4 vértices." << std::endl;
     
     // Executar algoritmo de Tarjan
-    TarjanMST tarjan(graph);
+    TarjanMST tarjan1(graph1);
     
     // Testar com raiz 0
     std::cout << "\nCalculando arborescência com raiz 0:" << std::endl;
-    std::vector<TarjanEdge> mst = tarjan.findMinimumSpanningArborescence(0);
-    tarjan.printArborescence(mst);
+    std::vector<TarjanEdge> mst1 = tarjan1.findMinimumSpanningArborescence(0);
+    tarjan1.printArborescence(mst1);
     
-    // Testar com raiz 1
-    std::cout << "\nCalculando arborescência com raiz 1:" << std::endl;
-    TarjanMST tarjan2(graph);
-    std::vector<TarjanEdge> mst2 = tarjan2.findMinimumSpanningArborescence(1);
+    // Teste 2: Grafo com ciclo nas arestas mínimas
+    std::cout << "\n=== TESTE 2: Grafo com ciclo ===" << std::endl;
+    WeightedGraph graph2(4, true);
+    
+    // Criar um grafo onde as arestas mínimas formam um ciclo
+    // Ciclo: 1 -> 2 -> 3 -> 1
+    graph2.insertEdge(0, 1, 10.0);  // Raiz -> 1 (única entrada para 1)
+    graph2.insertEdge(1, 2, 2.0);   // 1 -> 2 (menor entrada para 2)
+    graph2.insertEdge(2, 3, 1.0);   // 2 -> 3 (menor entrada para 3)
+    graph2.insertEdge(3, 1, 1.0);   // 3 -> 1 (menor entrada para 1, criando ciclo!)
+    
+    // Arestas alternativas (com pesos maiores)
+    graph2.insertEdge(0, 2, 15.0);  // Alternativa para 2
+    graph2.insertEdge(0, 3, 20.0);  // Alternativa para 3
+    
+    std::cout << "Grafo com ciclo criado:" << std::endl;
+    std::cout << "- 0 -> 1 (peso 10.0)" << std::endl;
+    std::cout << "- 1 -> 2 (peso 2.0)" << std::endl;
+    std::cout << "- 2 -> 3 (peso 1.0)" << std::endl;
+    std::cout << "- 3 -> 1 (peso 1.0) <- Forma ciclo!" << std::endl;
+    std::cout << "- 0 -> 2 (peso 15.0)" << std::endl;
+    std::cout << "- 0 -> 3 (peso 20.0)" << std::endl;
+    
+    TarjanMST tarjan2(graph2);
+    
+    std::cout << "\nCalculando arborescência com raiz 0:" << std::endl;
+    std::vector<TarjanEdge> mst2 = tarjan2.findMinimumSpanningArborescence(0);
     tarjan2.printArborescence(mst2);
+    
+    // Teste 3: Grafo mais complexo com múltiplos ciclos
+    std::cout << "\n=== TESTE 3: Grafo com múltiplos componentes ===" << std::endl;
+    WeightedGraph graph3(6, true);
+    
+    // Primeiro componente (raiz 0)
+    graph3.insertEdge(0, 1, 5.0);
+    graph3.insertEdge(0, 2, 4.0);
+    
+    // Ciclo entre 3, 4, 5
+    graph3.insertEdge(1, 3, 3.0);   // Entrada para 3
+    graph3.insertEdge(2, 4, 2.0);   // Entrada para 4  
+    graph3.insertEdge(3, 5, 1.0);   // 3 -> 5
+    graph3.insertEdge(4, 5, 1.5);   // 4 -> 5 (maior, não será escolhida)
+    graph3.insertEdge(5, 3, 1.0);   // 5 -> 3 (cria ciclo!)
+    graph3.insertEdge(5, 4, 0.5);   // 5 -> 4 (menor entrada para 4, cria ciclo!)
+    
+    std::cout << "Grafo complexo com 6 vértices criado." << std::endl;
+    
+    TarjanMST tarjan3(graph3);
+    
+    std::cout << "\nCalculando arborescência com raiz 0:" << std::endl;
+    std::vector<TarjanEdge> mst3 = tarjan3.findMinimumSpanningArborescence(0);
+    tarjan3.printArborescence(mst3);
 }
 #endif
 

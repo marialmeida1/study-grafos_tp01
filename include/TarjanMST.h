@@ -25,9 +25,10 @@ private:
     
     // Métodos auxiliares
     void findMinIncomingEdges();
-    bool hasCycle(int root);
-    void contractCycle(int root);
-    void expandSolution();
+    std::vector<TarjanEdge> contractCyclesAndSolve(int root, int cycleCount);
+    WeightedGraph createContractedGraph(int root, int cycleCount, std::vector<int>& nodeMapping);
+    std::vector<TarjanEdge> expandSolution(const std::vector<TarjanEdge>& contractedSolution, 
+                                         const std::vector<int>& nodeMapping);
     
 public:
     TarjanMST(const WeightedGraph& graph);
