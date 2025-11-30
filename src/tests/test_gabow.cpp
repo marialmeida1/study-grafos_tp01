@@ -26,7 +26,7 @@ bool isValidArborescence(int n, int root, const vector<GabowEdge>& arb) {
         adj[e.from].push_back(e.to);
     }
 
-    // DFS para detectar ciclo
+    // DFS para detectar ciclo e verificar alcançabilidade
     vector<int> vis(n, 0);
 
     function<bool(int)> dfs = [&](int u) {
@@ -41,9 +41,11 @@ bool isValidArborescence(int n, int root, const vector<GabowEdge>& arb) {
 
     if (!dfs(root)) return false;
 
-    // Todos os vértices devem ser alcançáveis da raiz
-    for (int i = 0; i < n; i++)
-        if (vis[i] == 0) return false;
+    // Verifica se todos os vértices (exceto a raiz) têm pai
+    // Isso garante que são alcançáveis
+    for (int i = 0; i < n; i++) {
+        if (i != root && parent[i] == -1) return false;
+    }
 
     return true;
 }
