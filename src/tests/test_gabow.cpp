@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <functional>
+#include <cmath>
 
 #include "WeightedGraph.h"
 #include "GabowMST.h"
