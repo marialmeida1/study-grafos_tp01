@@ -1,0 +1,69 @@
+Divisão de tarefas:
+
+Pessoa 1 – Implementação do Algoritmo de Edmonds (Algoritmo Principal)
+Título da Issue: Implementação do Algoritmo de Edmonds (Árvore Geradora Mínima Direcionada)
+Descrição: Implementar o algoritmo de Edmonds para encontrar a arborescência geradora mínima em grafos direcionados.
+Tarefas:
+- Implementar o algoritmo de Edmonds em C/C++.
+- Testar a implementação com grafos simples e complexos.
+- Documentar o código explicando o funcionamento do algoritmo.
+Dependências: Nenhuma. A implementação será utilizada pela Pessoa 4 para testes experimentais e por outras pessoas no relatório final.
+---
+Pessoa 2 – Implementação do Algoritmo de Tarjan (1977)
+Título da Issue: Implementação do Algoritmo de Tarjan (Árvore Geradora Mínima Direcionada)
+Descrição: Implementar o algoritmo de Tarjan para calcular a arborescência geradora mínima.
+Tarefas:
+- Implementar o algoritmo de Tarjan em C/C++.
+- Testar a implementação.
+- Documentar a implementação.
+Dependências: Nenhuma. A implementação será utilizada pela Pessoa 4 para testes experimentais e por outras pessoas no relatório final.
+---
+Pessoa 3 – Implementação do Algoritmo de Gabow et al. (1986)
+Título da Issue: Implementação do Algoritmo de Gabow et al. (GGST) – Árvore Geradora Mínima Direcionada
+Descrição: Implementar o algoritmo de Gabow et al. (GGST) para calcular a arborescência geradora mínima.
+Tarefas:
+- Implementar o algoritmo de Gabow et al. (GGST) em C/C++.
+- Testar a implementação.
+- Documentar o código explicando o funcionamento do algoritmo.
+Dependências: Nenhuma. A implementação será utilizada pela Pessoa 4 para testes experimentais e por outras pessoas no relatório final.
+---
+Pessoa 4 – Experimentos e Comparação de Resultados
+Título da Issue: Experimentos e Comparação de Desempenho dos Algoritmos de Arborescência Geradora Mínima
+Descrição: Executar experimentos comparando os três algoritmos (Edmonds, Tarjan, Gabow et al.) em termos de desempenho e precisão.
+Tarefas:
+- Realizar experimentos comparando os três algoritmos em termos de tempo de execução e precisão.
+- Analisar o desempenho dos algoritmos.
+- Criar gráficos e tabelas comparativas dos resultados obtidos.
+- Documentar os resultados e as conclusões dos experimentos.
+Dependências: Depende das implementações dos algoritmos de Pessoa 1 (Edmonds), Pessoa 2 (Tarjan), e Pessoa 3 (Gabow et al.) para realizar os testes.
+---
+Pessoa 5 – Segmentação de Imagens com Árvores Geradoras Mínimas
+Título da Issue: Segmentação de Imagens Usando Árvores Geradoras Mínimas
+Descrição: Desenvolver métodos de segmentação de imagens que utilizam arborescências geradoras mínimas.
+Tarefas:
+- Implementar a segmentação de imagens utilizando as arborescências geradoras mínimas.
+- Integrar os algoritmos de Edmonds, Tarjan e Gabow et al. para a segmentação.
+- Testar a eficácia da segmentação com diferentes tipos de grafos e imagens.
+- Documentar o processo e os resultados da segmentação.
+Dependências: Depende das implementações dos algoritmos de Pessoa 1, Pessoa 2 e Pessoa 3.
+---
+Pessoa 6 – Preparação do Relatório e LaTeX
+Título da Issue: Preparação do Relatório Final em LaTeX
+Descrição: Escrever o relatório final do projeto e formatá-lo em LaTeX, seguindo o modelo JBCS.
+Tarefas:
+- Escrever a seção teórica sobre os algoritmos de arborescência geradora mínima (Edmonds, Tarjan, Gabow et al.).
+- Realizar a formatação do relatório final em LaTeX conforme as normas JBCS.
+- Adicionar gráficos, tabelas e resultados de experimentos no relatório.
+- Revisar o relatório final para clareza e gramática.
+Dependências: Depende dos resultados de Pessoa 4 (Experimentos) e das implementações dos algoritmos de Pessoa 1, Pessoa 2 e Pessoa 3.
+---
+Pessoa 7 – Análise de Desempenho e Otimização de Algoritmos
+Título da Issue: Análise de Desempenho e Otimização dos Algoritmos de Arborescência Geradora Mínima
+Descrição: Realizar análise de desempenho dos três algoritmos (Edmonds, Tarjan, Gabow et al.) e buscar otimizações possíveis para melhorar a eficiência dos algoritmos.
+Tarefas:
+- Analisar a complexidade dos algoritmos em diferentes cenários, especialmente em grafos grandes.
+- Identificar gargalos de desempenho e sugerir ou implementar melhorias (como paralelização ou otimização de estruturas de dados).
+- Testar os algoritmos com grafos de grande escala para validar sua eficiência.
+- Documentar as análises de complexidade e as otimizações realizadas.
+- Sugerir melhorias no código, caso necessário, e revisar a implementação para garantir um bom desempenho.
+Dependências: Depende das implementações dos algoritmos de Pessoa 1, Pessoa 2 e Pessoa 3, e também dos dados experimentais de Pessoa 4.

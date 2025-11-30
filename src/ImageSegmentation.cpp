@@ -19,7 +19,7 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
                                         const std::string& outputPath, 
                                         Strategy strategy,
                                         double threshold) {
-    auto Ttotal0 = std::chrono::steady_clock::now();
+    auto Ttotal0 = std::chrono::steady_clock::now(); // <-- adicionado
 
     int width, height, channels;
     unsigned char* img = stbi_load(inputPath.c_str(), &width, &height, &channels, 3); // Força RGB
@@ -35,7 +35,7 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
     bool isDirected = (strategy == MSA_DIRECTED);
 
     std::cout << "Construindo Grafo (" << width << "x" << height << ")..." << std::endl;
-    auto Tbuild0 = std::chrono::steady_clock::now();
+    auto Tbuild0 = std::chrono::steady_clock::now(); // <-- adicionado
 
     WeightedGraph g(numVertices, isDirected);
 
@@ -43,7 +43,7 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
     for (int y = 0; y < height; ++y) {
         // progresso a cada 50 linhas
         if (y % 50 == 0) {
-            std::cout << "  linha " << y << "/" << height << "\r" << std::flush;
+            std::cout << "  linha " << y << "/" << height << "\r" << std::flush; // <-- adicionado
         }
 
         for (int x = 0; x < width; ++x) {
@@ -76,13 +76,13 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
         }
     }
     std::cout << std::string(30, ' ') << "\r" << std::flush; // limpa linha de progresso
-    auto Tbuild1 = std::chrono::steady_clock::now();
+    auto Tbuild1 = std::chrono::steady_clock::now(); // <-- adicionado
     std::cout << "Grafo pronto em "
               << std::chrono::duration_cast<std::chrono::milliseconds>(Tbuild1 - Tbuild0).count()
-              << " ms" << std::endl;
+              << " ms" << std::endl; // <-- adicionado
 
     std::cout << "\nExecutando Algoritmo de Arborescencia/MST..." << std::endl;
-    auto Talgo0 = std::chrono::steady_clock::now();
+    auto Talgo0 = std::chrono::steady_clock::now(); // <-- adicionado
     
     // Vetor para armazenar o resultado (floresta)
     // Usaremos um mapa de pai para Union-Find ou reconstrução
@@ -115,10 +115,10 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
             parent[edge.to] = edge.from;
         }
     }
-    auto Talgo1 = std::chrono::steady_clock::now();
+    auto Talgo1 = std::chrono::steady_clock::now(); // <-- adicionado
     std::cout << "\nAlgoritmo concluído em "
               << std::chrono::duration_cast<std::chrono::milliseconds>(Talgo1 - Talgo0).count()
-              << " ms" << std::endl;
+              << " ms" << std::endl; // <-- adicionado
 
     // Pós-processamento: Union-Find para colorir componentes conectados
     // (Implementação simplificada de "flattening" dos pais)
@@ -134,19 +134,19 @@ void ImageSegmentation::runSegmentation(const std::string& inputPath,
     }
 
     std::cout << "\nSalvando resultado em " << outputPath << std::endl;
-    auto Tout0 = std::chrono::steady_clock::now();
+    auto Tout0 = std::chrono::steady_clock::now(); // <-- adicionado
     saveSegmentedImage(outputPath, width, height, parent);
-    auto Tout1 = std::chrono::steady_clock::now();
+    auto Tout1 = std::chrono::steady_clock::now(); // <-- adicionado
     std::cout << "Imagem salva em "
               << std::chrono::duration_cast<std::chrono::milliseconds>(Tout1 - Tout0).count()
-              << " ms" << std::endl;
+              << " ms" << std::endl; // <-- adicionado
 
     stbi_image_free(img);
 
-    auto Ttotal1 = std::chrono::steady_clock::now();
+    auto Ttotal1 = std::chrono::steady_clock::now(); // <-- adicionado
     std::cout << "Tempo total: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(Ttotal1 - Ttotal0).count()
-              << " ms" << std::endl;
+              << " ms" << std::endl; // <-- adicionado
 }
 
 double ImageSegmentation::getDissimilarity(const unsigned char* img, int w, int u, int v, int channels, bool directed) {

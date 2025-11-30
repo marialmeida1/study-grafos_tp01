@@ -19,9 +19,16 @@ study-grafos_tp01/
 ├─ include/
 │ ├─ Edge.h # Definição da classe Aresta
 │ ├─ Graph.h # Definição da classe Grafo
-│ └─ GraphBase.h # Classes base ou utilitárias
+│ ├─ GraphBase.h # Classes base ou utilitárias
+│ ├─ WeightedEdge.h
+│ ├─ WeightedGraph.h
+│ ├─ EdmondsMST.h
+│ └─ TarjanMST.h
 ├─ src/
 │ ├─ Graph.cpp # Implementação da classe Grafo
+│ ├─ WeightedGraph.cpp
+│ ├─ EdmondsMST.cpp
+│ ├─ TarjanMST.cpp
 │ └─ main.cpp # Função principal do programa
 └─ main # Executável gerado após compilação
 ```
