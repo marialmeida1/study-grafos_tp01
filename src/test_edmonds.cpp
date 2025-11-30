@@ -17,7 +17,7 @@
 // Testa Edmonds em um grafo simples
 void test_simple()
 {
-    std::cout << "\n[Test] simple graph\n";
+    std::cout << "\n[Teste] Grafo simples\n";
 
     WeightedGraph g(3, true);
     g.insertEdge(0, 1, 1.0);
@@ -30,13 +30,13 @@ void test_simple()
     ed.printArborescence(arb);
 
     assert(std::abs(ed.getTotalWeight() - 2.0) < 1e-9);
-    std::cout << "[OK] simple\n";
+    std::cout << "[OK] Grafo simples\n";
 }
 
 // Teste com ciclo simples
 void test_cycle_simple()
 {
-    std::cout << "\n[Test] simple cycle\n";
+    std::cout << "\n[Teste] Ciclo simples\n";
 
     WeightedGraph g(4, true);
     g.insertEdge(0, 1, 5.0);
@@ -53,13 +53,13 @@ void test_cycle_simple()
     // Esperado: peso 8.0 (0->1(5),1->2(2),2->3(1))
     double expected = 8.0;
     assert(std::abs(ed.getTotalWeight() - expected) < 1e-6);
-    std::cout << "[OK] simple cycle\n";
+    std::cout << "[OK] Ciclo simples\n";
 }
 
 // Teste com dois ciclos aninhados
 void test_nested_cycles()
 {
-    std::cout << "\n[Test] nested cycles\n";
+    std::cout << "\n[Teste] Ciclos aninhados\n";
 
     // Construir grafo com ciclos aninhados (exemplo pequeno)
     // Estrutura: (0)->1->2->0 e 2->3->4->2 (dois ciclos conectados)
@@ -81,13 +81,13 @@ void test_nested_cycles()
     // Não temos um valor único trivial esperado aqui (depende de escolhas), mas
     // garantimos que o número de arestas == n-1 e que peso total > 0
     assert((int)arb.size() == g.V() - 1);
-    std::cout << "[OK] nested cycles\n";
+    std::cout << "[OK] Ciclos aninhados\n";
 }
 
 // Teste de performance com grafo denso/aleatório
 void test_performance(int n, int density_percent)
 {
-    std::cout << "\n[Test] performance: n=" << n << " density=" << density_percent << "%\n";
+    std::cout << "\n[Teste] Performance: n=" << n << " densidade=" << density_percent << "%\n";
 
     WeightedGraph g(n, true);
 
@@ -114,15 +114,15 @@ void test_performance(int n, int density_percent)
     auto t1 = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> diff = t1 - t0;
-    std::cout << "Time (s): " << diff.count() << "\n";
+    std::cout << "Tempo (s): " << diff.count() << "\n";
 
     if (!arb.empty())
-        std::cout << "Edges in arborescence: " << arb.size() << "\n";
+        std::cout << "Arestas na arborescência: " << arb.size() << "\n";
 
     else
-        std::cout << "No arborescence found (graph may be disconnected from root)\n";
+        std::cout << "Nenhuma arborescência encontrada (grafo pode estar desconectado da raiz)\n";
 
-    std::cout << "[OK] performance test done\n";
+    std::cout << "[OK] Teste de performance concluído\n";
 }
 
 int main()
@@ -135,16 +135,16 @@ int main()
         // teste de performance (n pequeno por padrão; ajuste conforme máquina)
         test_performance(200, 20);
 
-        std::cout << "\nAll Edmonds tests finished.\n";
+        std::cout << "\nTodos os testes do Edmonds finalizados.\n";
     }
     catch (const std::exception &ex)
     {
-        std::cerr << "Exception: " << ex.what() << std::endl;
+        std::cerr << "Exceção: " << ex.what() << std::endl;
         return 2;
     }
     catch (...)
     {
-        std::cerr << "Unknown error\n";
+        std::cerr << "Erro desconhecido\n";
         return 3;
     }
     return 0;
