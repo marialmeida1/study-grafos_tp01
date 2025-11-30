@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 
 /*
  * Edmonds/Chu–Liu para Arborescência Geradora Mínima (direcionada).
@@ -150,7 +151,7 @@ static std::vector<EdmondsEdge> edmonds(int N, int root, const std::vector<Edmon
             if (id[e.from] == a && id[e.to] == b)
             {
                 double adjW = e.weight - inWeight[e.to];
-                if (std::abs(adjW - r.weight) < EPS)
+                if (std::fabs(adjW - r.weight) < EPS)
                 {
                     // Substitui aresta que entra no componente b.
                     for (auto &fe : finalEdges)

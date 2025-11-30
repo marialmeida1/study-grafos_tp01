@@ -27,7 +27,6 @@ void test_simple() {
     gbst.printArborescence(arb);
 
     assert(std::abs(gbst.getTotalWeight() - 2.0) < 1e-9);
-    std::cout << "[OK] Grafo simples\n";
 }
 
 // Teste com ciclo simples
