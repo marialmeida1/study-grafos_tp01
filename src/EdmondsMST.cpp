@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <chrono>
+#include <cmath>
 
 /*
  * Edmonds/Chu–Liu para Arborescência Geradora Mínima (direcionada).
@@ -17,20 +18,15 @@
 EdmondsMST::EdmondsMST(const WeightedGraph &g)
 {
     n = g.V();
-
-    // Extrai todas as arestas do grafo.
-    for (int u = 0; u < n; ++u)
-    {
-        for (int v = 0; v < n; ++v)
-        {
-            if (g.hasEdge(u, v))
-            {
-                edges.emplace_back(u, v, g.getWeight(u, v));
-            }
+    totalWeight = 0.0;
+    
+    for (int u = 0; u < n; ++u) {
+        WeightedGraph::AdjIterator it(g, u);
+        for (auto edge = it.begin(); !it.end(); edge = it.next()) {
+            // Insere no vetor de arestas interno
+            edges.emplace_back(u, edge.w, edge.weight);
         }
     }
-
-    totalWeight = 0.0;
 }
 
 /*
