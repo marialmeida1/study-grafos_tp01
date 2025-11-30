@@ -9,8 +9,9 @@ class ImageSegmentation {
 public:
     // Estratégias de segmentação
     enum Strategy {
-        MST_UNDIRECTED, // Felzenszwalb-like (Grafo associado)
-        MSA_DIRECTED    // Arborescência (Cousty et al.)
+        MST_UNDIRECTED, // Edmonds simulando não-direcionado
+        MSA_DIRECTED,   // Tarjan (Direcionado)
+        GABOW_MSA       // Gabow (Direcionado)
     };
 
     // Executa o pipeline completo

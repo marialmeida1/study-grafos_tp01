@@ -1,197 +1,206 @@
 #include "ImageSegmentation.h"
 #include "EdmondsMST.h"
 #include "TarjanMST.h"
-// #include "GabowMST.h"
+#include "GabowMST.h"
 
+// Definições necessárias para stb_image (apenas em um arquivo .cpp do projeto)
+#ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#endif
+
+#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#endif
 
 #include <iostream>
 #include <cmath>
+#include <queue>
 #include <map>
 #include <random>
-#include <array>
+#include <algorithm>
 #include <chrono>
+
+// Estrutura auxiliar para manipulação de cores
+struct Pixel {
+    unsigned char r, g, b;
+};
+
+// --- Implementação dos Métodos ---
+
+double ImageSegmentation::getDissimilarity(const unsigned char* img, int w, int idx1, int idx2, int channels, bool directed) {
+    // Índices no array de bytes da imagem
+    int p1 = idx1 * channels;
+    int p2 = idx2 * channels;
+
+    double diffSum = 0.0;
+    // Distância Euclidiana no espaço de cores RGB
+    for (int c = 0; c < 3; ++c) { // Considera R, G, B (ignora Alpha se houver)
+        double diff = static_cast<double>(img[p1 + c]) - static_cast<double>(img[p2 + c]);
+        diffSum += diff * diff;
+    }
+
+    return std::sqrt(diffSum);
+}
+
+void ImageSegmentation::saveSegmentedImage(const std::string& path, int width, int height, 
+                                           const std::vector<int>& componentMap) {
+    int channels = 3; // Saída sempre RGB
+    std::vector<unsigned char> outputData(width * height * channels);
+
+    // Mapa para armazenar cores aleatórias para cada componente (segmento)
+    std::map<int, Pixel> colorMap;
+    std::mt19937 rng(42); // Seed fixa para reprodutibilidade
+    std::uniform_int_distribution<int> uni(0, 255);
+
+    for (int i = 0; i < width * height; ++i) {
+        int compId = componentMap[i];
+
+        // Se é um novo segmento, gera uma cor nova
+        if (colorMap.find(compId) == colorMap.end()) {
+            colorMap[compId] = { 
+                static_cast<unsigned char>(uni(rng)), 
+                static_cast<unsigned char>(uni(rng)), 
+                static_cast<unsigned char>(uni(rng)) 
+            };
+        }
+
+        Pixel p = colorMap[compId];
+        int pixelIdx = i * channels;
+        outputData[pixelIdx] = p.r;
+        outputData[pixelIdx + 1] = p.g;
+        outputData[pixelIdx + 2] = p.b;
+    }
+
+    if (stbi_write_png(path.c_str(), width, height, channels, outputData.data(), width * channels)) {
+        std::cout << "Imagem segmentada salva em: " << path << std::endl;
+    } else {
+        std::cerr << "Erro ao salvar a imagem." << std::endl;
+    }
+}
 
 void ImageSegmentation::runSegmentation(const std::string& inputPath, 
                                         const std::string& outputPath, 
                                         Strategy strategy,
                                         double threshold) {
-    auto Ttotal0 = std::chrono::steady_clock::now(); // <-- adicionado
-
+    // 1. Carregar Imagem
     int width, height, channels;
-    unsigned char* img = stbi_load(inputPath.c_str(), &width, &height, &channels, 3); // Força RGB
-    if (!img) {
+    unsigned char* imgData = stbi_load(inputPath.c_str(), &width, &height, &channels, 0);
+
+    if (!imgData) {
         std::cerr << "Erro ao carregar imagem: " << inputPath << std::endl;
         return;
     }
 
     int numPixels = width * height;
-    // Se for MSA, precisamos de um nó raiz virtual extra
-    int rootNode = numPixels; 
-    int numVertices = (strategy == MSA_DIRECTED)? numPixels + 1 : numPixels;
-    bool isDirected = (strategy == MSA_DIRECTED);
+    std::cout << "Imagem carregada: " << width << "x" << height << " (" << numPixels << " pixels)" << std::endl;
 
     std::cout << "Construindo Grafo (" << width << "x" << height << ")..." << std::endl;
-    auto Tbuild0 = std::chrono::steady_clock::now(); // <-- adicionado
+    auto Tbuild0 = std::chrono::steady_clock::now();
 
-    WeightedGraph g(numVertices, isDirected);
+    // 2. Construir Grafo (WeightedGraph)
+    // Cada pixel é um vértice. Conectamos pixels vizinhos (4-vizinhança).
+    WeightedGraph graph(numPixels, true); // Grafo direcionado
 
-    // Construção do Grid (4-vizinhança)
+    // Offsets para vizinhos: Direita, Baixo, Esquerda, Cima
+    int dx[] = {1, 0, -1, 0};
+    int dy[] = {0, 1, 0, -1};
+
     for (int y = 0; y < height; ++y) {
-        // progresso a cada 50 linhas
-        if (y % 50 == 0) {
-            std::cout << "  linha " << y << "/" << height << "\r" << std::flush; // <-- adicionado
-        }
-
         for (int x = 0; x < width; ++x) {
             int u = y * width + x;
 
-            // Vizinhos: Baixo e Direita são suficientes para não-direcionado (evita duplicatas)
-            // Para direcionado, precisamos de todos os 4 vizinhos explicitamente se a lógica de peso for assimétrica
-            static constexpr std::array<int,4> dx{ 1, 0, -1, 0 };
-            static constexpr std::array<int,4> dy{ 0, 1, 0, -1 };
-            
-            // Otimização: Para grafo não direcionado, basta olhar direita e baixo
-            int k_limit = isDirected? 4 : 2; 
-
-            for (int k = 0; k < k_limit; ++k) {
+            for (int k = 0; k < 4; ++k) {
                 int nx = x + dx[k];
                 int ny = y + dy[k];
 
+                // Verifica limites da imagem
                 if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
                     int v = ny * width + nx;
-                    double w = getDissimilarity(img, width, u, v, 3, isDirected);
-                    g.insertEdge(u, v, w);
+                    double weight = getDissimilarity(imgData, width, u, v, channels, true);
+                    
+                    // Adiciona aresta u -> v
+                    graph.insertEdge(u, v, weight);
                 }
             }
-            
-            // Conecta Raiz Virtual -> Pixel (Apenas MSA)
-            if (strategy == MSA_DIRECTED) {
-                // Peso alto para desencorajar o uso da raiz, forçando agrupamento local
-                g.insertEdge(rootNode, u, 10000.0); 
+        }
+    }
+
+    // 3. Executar Algoritmo de MSA (Minimum Spanning Arborescence)
+    // Precisamos definir uma raiz. Em segmentação, geralmente usamos um nó virtual
+    // ou escolhemos arbitrariamente o pixel (0,0) assumindo que o grafo é fortemente conexo (grid é).
+    int root = 0; 
+    
+    // Lista de arestas resultantes da arborescência
+    struct SimpleEdge { int u, v; double w; };
+    std::vector<SimpleEdge> msaEdges;
+
+    std::cout << "Executando algoritmo de Arborescência..." << std::endl;
+
+    if (strategy == Strategy::MSA_DIRECTED) {
+        TarjanMST tarjan(graph);
+        auto result = tarjan.findMinimumSpanningArborescence(root);
+        for(const auto& e : result) msaEdges.push_back({e.from, e.to, e.weight});
+    } 
+    else if (strategy == Strategy::MST_UNDIRECTED) {
+        // Usando Edmonds como proxy para "MST direcionada clássica"
+        EdmondsMST edmonds(graph);
+        auto result = edmonds.compute(root);
+        for(const auto& e : result) msaEdges.push_back({e.from, e.to, e.weight});
+    }
+    else if (strategy == Strategy::GABOW_MSA) {
+        GabowMST gabow(graph);
+        auto result = gabow.compute(root);
+        for(const auto& e : result) msaEdges.push_back({e.from, e.to, e.weight});
+    }
+
+    std::cout << "Arborescência calculada. Total de arestas: " << msaEdges.size() << std::endl;
+
+    // 4. Segmentação (Corte de Arestas por Threshold e Busca de Componentes)
+    
+    // Construir lista de adjacência APENAS com arestas que satisfazem o threshold.
+    // Para colorir a região inteira, tratamos a conexão como não-direcionada na hora de buscar componentes.
+    std::vector<std::vector<int>> adj(numPixels);
+    
+    for (const auto& edge : msaEdges) {
+        if (edge.w <= threshold) {
+            adj[edge.u].push_back(edge.v);
+            adj[edge.v].push_back(edge.u); // Torna bidirecional para o Flood Fill alcançar o segmento todo
+        }
+    }
+
+    // BFS/Flood Fill para identificar componentes desconexos
+    std::vector<int> componentMap(numPixels, -1);
+    int componentCount = 0;
+
+    for (int i = 0; i < numPixels; ++i) {
+        if (componentMap[i] == -1) {
+            // Novo componente encontrado
+            std::queue<int> q;
+            q.push(i);
+            componentMap[i] = componentCount;
+
+            while (!q.empty()) {
+                int u = q.front();
+                q.pop();
+
+                for (int v : adj[u]) {
+                    if (componentMap[v] == -1) {
+                        componentMap[v] = componentCount;
+                        q.push(v);
+                    }
+                }
             }
-        }
-    }
-    std::cout << std::string(30, ' ') << "\r" << std::flush; // limpa linha de progresso
-    auto Tbuild1 = std::chrono::steady_clock::now(); // <-- adicionado
-    std::cout << "Grafo pronto em "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(Tbuild1 - Tbuild0).count()
-              << " ms" << std::endl; // <-- adicionado
-
-    std::cout << "\nExecutando Algoritmo de Arborescencia/MST..." << std::endl;
-    auto Talgo0 = std::chrono::steady_clock::now(); // <-- adicionado
-    
-    // Vetor para armazenar o resultado (floresta)
-    // Usaremos um mapa de pai para Union-Find ou reconstrução
-    std::vector<int> parent(numVertices);
-    for(int i=0; i<numVertices; ++i) parent[i] = i;
-
-    if (strategy == MSA_DIRECTED) {
-        // Usa Tarjan ou Edmonds (escolha o que estiver mais estável)
-        TarjanMST solver(g); 
-        auto arborescence = solver.findMinimumSpanningArborescence(rootNode);
-        
-        for (const auto& edge : arborescence) {
-            // CORTAR A ARBORESCÊNCIA (Segmentation Logic)
-            // 1. Se a aresta vem da raiz virtual, é o início de um novo componente
-            if (edge.from == rootNode) continue; 
-            
-            // 2. Se o peso for muito alto (borda forte), corta
-            if (edge.weight > threshold) continue;
-
-            parent[edge.to] = edge.from; // Constrói a árvore de componentes
-        }
-    } else {
-        // Para MST não direcionada, idealmente Kruskal/Prim.
-        EdmondsMST solver(g);
-        // Escolhe um pixel arbitrário como raiz para cobrir o grafo conexo
-        auto mst = solver.compute(0); 
-        
-        for (const auto& edge : mst) {
-            if (edge.weight > threshold) continue;
-            parent[edge.to] = edge.from;
-        }
-    }
-    auto Talgo1 = std::chrono::steady_clock::now(); // <-- adicionado
-    std::cout << "\nAlgoritmo concluído em "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(Talgo1 - Talgo0).count()
-              << " ms" << std::endl; // <-- adicionado
-
-    // Pós-processamento: Union-Find para colorir componentes conectados
-    // (Implementação simplificada de "flattening" dos pais)
-    bool changed = true;
-    while(changed) {
-        changed = false;
-        for(int i=0; i<numPixels; ++i) {
-            if (parent[i]!= i && parent[parent[i]]!= parent[i]) {
-                parent[i] = parent[parent[i]];
-                changed = true;
-            }
+            componentCount++;
         }
     }
 
-    std::cout << "\nSalvando resultado em " << outputPath << std::endl;
-    auto Tout0 = std::chrono::steady_clock::now(); // <-- adicionado
-    saveSegmentedImage(outputPath, width, height, parent);
-    auto Tout1 = std::chrono::steady_clock::now(); // <-- adicionado
-    std::cout << "Imagem salva em "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(Tout1 - Tout0).count()
-              << " ms" << std::endl; // <-- adicionado
+    std::cout << "Segmentação concluída. Número de segmentos: " << componentCount << std::endl;
 
-    stbi_image_free(img);
+    // 5. Salvar Resultado
+    saveSegmentedImage(outputPath, width, height, componentMap);
 
-    auto Ttotal1 = std::chrono::steady_clock::now(); // <-- adicionado
-    std::cout << "Tempo total: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(Ttotal1 - Ttotal0).count()
-              << " ms" << std::endl; // <-- adicionado
-}
-
-double ImageSegmentation::getDissimilarity(const unsigned char* img, int w, int u, int v, int channels, bool directed) {
-    // Acesso aos pixels
-    int idxU = u * channels;
-    int idxV = v * channels;
-    
-    double dist = 0;
-    // Distância Euclidiana RGB
-    double r = img[idxU] - img[idxV];
-    double g = img[idxU+1] - img[idxV+1];
-    double b = img[idxU+2] - img[idxV+2];
-    dist = std::sqrt(r*r + g*g + b*b);
-
-    if (directed) {
-        // Truque para MSA (Cousty et al): 
-        // Favorecer arestas que descem o gradiente (regiões claras para escuras ou vice-versa)
-        // Se U é muito diferente de V, o peso é alto.
-        // Mas se quisermos "Waterhsed", podemos fazer peso direcional:
-        // weight(u->v) = max(0, intensity(v) - intensity(u))
-        // Isso cria bacias de atração nos mínimos locais.
-        return dist; // Por enquanto, mantemos simétrico para teste básico
-    }
-    return dist;
-}
-
-void ImageSegmentation::saveSegmentedImage(const std::string& path, int width, int height, const std::vector<int>& labels) {
-    std::vector<unsigned char> data(width * height * 3);
-    std::map<int, std::vector<unsigned char>> colors;
-    
-    // Gerador de cores aleatórias para os segmentos
-    std::mt19937 rng(42); 
-    std::uniform_int_distribution<int> uni(0, 255);
-
-    for (int i = 0; i < width * height; ++i) {
-        int label = labels[i];
-        
-        if (colors.find(label) == colors.end()) {
-            colors[label] = { (unsigned char)uni(rng), (unsigned char)uni(rng), (unsigned char)uni(rng) };
-        }
-        
-        data[i*3]   = colors[label][0];
-        data[i*3+1] = colors[label][1];
-        data[i*3+2] = colors[label][2];
-    }
-    
-    stbi_write_png(path.c_str(), width, height, 3, data.data(), width * 3);
+    // Limpeza
+    stbi_image_free(imgData);
 }
