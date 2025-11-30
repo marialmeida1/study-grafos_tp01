@@ -37,23 +37,19 @@ study-grafos_tp01/
 
 Para compilar e executar o projeto, utilize o seguinte comando no terminal:
 
-**Grafo Não-Ponderado**
+```
+make
+```
 
-```bash
-g++ -Iinclude src/main.cpp src/Graph.cpp -o main
-./main
-``` 
+Escolha o teste que deseja rodar
 
-**Todos os Grafos**
-
-```bash
-g++ -DWEIGHTED_GRAPH -Iinclude src/main.cpp src/Graph.cpp src/WeightedGraph.cpp -o main
-./main
-``` 
-
-* -Iinclude adiciona a pasta include ao caminho de busca dos arquivos de cabeçalho.
-* `src/main.cpp` `src/Graph.cpp` `src/WeightedGraph.cpp` são os arquivos de implementação.
-* -o main especifica o nome do executável.
+```
+./bin/main
+```
+```
+./bin/test_tarjan
+```
+....
 
 ## Integrantes
 

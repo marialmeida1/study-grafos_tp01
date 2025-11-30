@@ -1,97 +1,76 @@
 #include <iostream>
 #include "Graph.h"
 
-// This preprocessor directive checks if WEIGHTED_GRAPH has been defined during compilation.
-// If so, it includes the necessary header for the WeightedGraph class.
 #ifdef WEIGHTED_GRAPH
 #include "WeightedGraph.h"
-#include "TarjanMST.h"
 #endif
 
-// --- Test function for Unweighted Graphs ---
+// -----------------------------------------------------------------------------
+// Testes de grafos não ponderados
+// -----------------------------------------------------------------------------
 void testUnweightedGraphs() {
-    std::cout << "\n--- Testing Unweighted, Directed Graph ---" << std::endl;
-    Graph g_dir(5, true);
+    std::cout << "\n--- Testing Unweighted, Directed Graph ---\n";
+
+    Graph g_dir(5, /*directed=*/true);
     g_dir.insertEdge(0, 1);
     g_dir.insertEdge(0, 2);
-    std::cout << "Initial Directed Graph:" << std::endl;
-    g_dir.print();
-    std::cout << "Edge 0->1? " << (g_dir.hasEdge(0, 1) ? "Yes" : "No") << std::endl;
-    std::cout << "Edge 1->0? " << (g_dir.hasEdge(1, 0) ? "Yes" : "No") << std::endl;
 
-    std::cout << "\n--- Testing Unweighted, Undirected Graph ---" << std::endl;
-    Graph g_undir(5, false);
+    std::cout << "Initial Directed Graph:\n";
+    g_dir.print();
+
+    std::cout << "Edge 0->1? " << (g_dir.hasEdge(0, 1) ? "Yes" : "No") << '\n';
+    std::cout << "Edge 1->0? " << (g_dir.hasEdge(1, 0) ? "Yes" : "No") << '\n';
+
+    std::cout << "\n--- Testing Unweighted, Undirected Graph ---\n";
+
+    Graph g_undir(5, /*directed=*/false);
     g_undir.insertEdge(0, 1);
     g_undir.insertEdge(0, 2);
-    std::cout << "Initial Undirected Graph:" << std::endl;
+
+    std::cout << "Initial Undirected Graph:\n";
     g_undir.print();
-    std::cout << "Edge 0-1? " << (g_undir.hasEdge(0, 1) ? "Yes" : "No") << std::endl;
-    std::cout << "Edge 1-0? " << (g_undir.hasEdge(1, 0) ? "Yes" : "No") << std::endl;
+
+    std::cout << "Edge 0-1? " << (g_undir.hasEdge(0, 1) ? "Yes" : "No") << '\n';
+    std::cout << "Edge 1-0? " << (g_undir.hasEdge(1, 0) ? "Yes" : "No") << '\n';
 }
 
-
-// --- Test function for Weighted Graphs ---
-// This entire function will only be included in the program if WEIGHTED_GRAPH is defined.
+// -----------------------------------------------------------------------------
+// Testes de grafos ponderados
+// Só é compilado se WEIGHTED_GRAPH estiver definido
+// -----------------------------------------------------------------------------
 #ifdef WEIGHTED_GRAPH
 void testWeightedGraphs() {
-    std::cout << "\n--- Testing Weighted, Directed Graph ---" << std::endl;
-    WeightedGraph wg_dir(5, true);
+    std::cout << "\n--- Testing Weighted, Directed Graph ---\n";
+
+    WeightedGraph wg_dir(5, /*directed=*/true);
     wg_dir.insertEdge(0, 1, 2.5);
     wg_dir.insertEdge(1, 2, 3.1);
-    std::cout << "Weight of 0->1: " << wg_dir.getWeight(0, 1) << std::endl;
-    std::cout << "Weight of 1->0: " << wg_dir.getWeight(1, 0) << " (should be -1 as it doesn't exist)" << std::endl;
 
-    std::cout << "\n--- Testing Weighted, Undirected Graph ---" << std::endl;
-    WeightedGraph wg_undir(5, false);
+    std::cout << "Weight of 0->1: " << wg_dir.getWeight(0, 1) << '\n';
+    std::cout << "Weight of 1->0: " 
+              << wg_dir.getWeight(1, 0)
+              << " (should be -1 as it doesn't exist)\n";
+
+    std::cout << "\n--- Testing Weighted, Undirected Graph ---\n";
+
+    WeightedGraph wg_undir(5, /*directed=*/false);
     wg_undir.insertEdge(0, 1, 2.5);
     wg_undir.insertEdge(1, 2, 3.1);
-    std::cout << "Weight of 0-1: " << wg_undir.getWeight(0, 1) << std::endl;
-    std::cout << "Weight of 1-0: " << wg_undir.getWeight(1, 0) << std::endl;
-}
 
-void testTarjanMST() {
-    std::cout << "\n--- Testing Tarjan MST Algorithm ---" << std::endl;
-    
-    // Criar um grafo direcionado ponderado para teste
-    WeightedGraph graph(4, true);
-    
-    // Adicionar arestas
-    graph.insertEdge(0, 1, 5.0);
-    graph.insertEdge(0, 2, 3.0);
-    graph.insertEdge(1, 2, 2.0);
-    graph.insertEdge(1, 3, 4.0);
-    graph.insertEdge(2, 3, 1.0);
-    graph.insertEdge(3, 0, 6.0);
-    
-    std::cout << "Grafo de teste criado com 4 vértices." << std::endl;
-    
-    // Executar algoritmo de Tarjan
-    TarjanMST tarjan(graph);
-    
-    // Testar com raiz 0
-    std::cout << "\nCalculando arborescência com raiz 0:" << std::endl;
-    std::vector<TarjanEdge> mst = tarjan.findMinimumSpanningArborescence(0);
-    tarjan.printArborescence(mst);
-    
-    // Testar com raiz 1
-    std::cout << "\nCalculando arborescência com raiz 1:" << std::endl;
-    TarjanMST tarjan2(graph);
-    std::vector<TarjanEdge> mst2 = tarjan2.findMinimumSpanningArborescence(1);
-    tarjan2.printArborescence(mst2);
+    std::cout << "Weight of 0-1: " << wg_undir.getWeight(0, 1) << '\n';
+    std::cout << "Weight of 1-0: " << wg_undir.getWeight(1, 0) << '\n';
 }
 #endif
 
-
 int main() {
-    std::cout << "--- Running Graph Tests ---" << std::endl;
+    std::cout << "--- Running Graph Tests ---\n";
+
     testUnweightedGraphs();
 
-    // The call to testWeightedGraphs() is also wrapped, so it only runs if compiled for it.
-    #ifdef WEIGHTED_GRAPH
+#ifdef WEIGHTED_GRAPH
     testWeightedGraphs();
-    testTarjanMST();
-    #endif
+#endif
 
-    std::cout << "\n--- Tests Finished ---" << std::endl;
+    std::cout << "\n--- Tests Finished ---\n";
     return 0;
 }
