@@ -175,7 +175,7 @@ static std::vector<EdmondsEdge> edmonds(int N, int root, const std::vector<Edmon
 std::vector<EdmondsEdge> EdmondsMST::compute(int root)
 {
     if (root < 0 || root >= n)
-        throw std::invalid_argument("Raiz inválida.");
+        throw std::invalid_argument("Raiz fora do intervalo válido.");
 
     arborescence = edmonds(n, root, edges);
 
@@ -191,7 +191,7 @@ std::vector<EdmondsEdge> EdmondsMST::compute(int root)
 
 void EdmondsMST::printArborescence(const std::vector<EdmondsEdge> &arb) const
 {
-    std::cout << "\n--- Arborescência Mínima (Edmonds) ---\n";
+    std::cout << "\n--- Arborescência Geradora Mínima (Edmonds) ---\n";
     double sum = 0.0;
 
     for (const auto &e : arb)
