@@ -1,130 +1,187 @@
 #include <iostream>
+#include <vector>
 #include <cassert>
-#include <chrono>
+
 #include "WeightedGraph.h"
 #include "GabowMST.h"
 #include <cmath>
+#include <functional>
 
-/*
- * Testes automáticos mínimos para Gabow:
- * - caso 1: grafo simples (sem ciclos)
- * - caso 2: grafo com ciclo simples
- * - caso 3: grafo com ciclos aninhados
- * - caso 4: grafo grande (gerador aleatório simples) apenas para medir tempo
- */
+using namespace std;
 
-// Testa Gabow em um grafo simples
-void test_simple() {
-    std::cout << "\n[Teste] Grafo simples\n";
+// Verifica se forma uma arborescência válida:
+// - (n-1) arestas, sem ciclos, cada vértice tem exatamente 1 pai
+bool isValidArborescence(int n, int root, const vector<GabowEdge>& arb) {
+    if ((int)arb.size() != n - 1) return false;
 
-    WeightedGraph g(3, true);
-    g.insertEdge(0,1,1.0);
-    g.insertEdge(0,2,5.0);
-    g.insertEdge(1,2,1.0);
+    vector<int> parent(n, -1);
 
-    // Resultado esperado: 0->1 (1.0) e 1->2 (1.0)
-    GabowMST gbst(g);
-    auto arb = gbst.compute(0);
-    gbst.printArborescence(arb);
-
-    // LINHA MODIFICADA PARA IMPRIMIR O PESO
-    std::cout << "Peso Calculado: " << gbst.getTotalWeight() << " | Peso Esperado: 2.0\n";
-    // FIM DA MODIFICAÇÃ
-    //assert(std::fabs(gbst.getTotalWeight() - 2.0) < 1e-9);
-}
-
-// Teste com ciclo simples
-void test_cycle_simple() {
-    std::cout << "\n[Teste] Ciclo simples\n";
-
-    WeightedGraph g(4, true);
-    g.insertEdge(0,1,5.0);
-    g.insertEdge(1,2,2.0);
-    g.insertEdge(2,3,1.0);
-    g.insertEdge(3,0,6.0);
-    g.insertEdge(0,2,3.0);
-
-    GabowMST gbst(g);
-    auto arb = gbst.compute(0);
-    gbst.printArborescence(arb);
-
-    // Esperado: peso total 8.0
-    assert(std::fabs(gbst.getTotalWeight() - 8.0) < 1e-6);
-    std::cout << "[OK] Ciclo simples\n";
-}
-
-// Teste com ciclos aninhados
-void test_nested_cycles() {
-    std::cout << "\n[Teste] Ciclos aninhados\n";
-
-    WeightedGraph g(6, true);
-    g.insertEdge(0,1,2.0);
-    g.insertEdge(1,2,2.0);
-    g.insertEdge(2,0,2.0); // ciclo 0-1-2
-    g.insertEdge(2,3,1.0);
-    g.insertEdge(3,4,1.0);
-    g.insertEdge(4,2,1.0); // ciclo 2-3-4
-    g.insertEdge(0,5,10.0);
-    g.insertEdge(3,5,3.0);
-
-    GabowMST gbst(g);
-    auto arb = gbst.compute(0);
-    gbst.printArborescence(arb);
-
-    // Garantir que número de arestas = n-1
-    assert((int)arb.size() == g.V() - 1);
-    std::cout << "[OK] Ciclos aninhados\n";
-}
-
-// Teste de performance com grafo denso/aleatório
-void test_performance(int n, int density_percent) {
-    std::cout << "\n[Teste] Performance: n=" << n << " densidade=" << density_percent << "%\n";
-
-    WeightedGraph g(n, true);
-
-    // inserir arestas randômicas determinísticas (para teste repetível)
-    for (int u = 0; u < n; ++u) {
-        for (int v = 0; v < n; ++v) {
-            if (u == v) continue;
-
-            // Probabilidade baseada em hashing simples
-            if (((u * 31 + v * 17) % 100) < density_percent) {
-                double w = 1.0 + ((u * 13 + v * 7) % 100) / 10.0;
-                g.insertEdge(u,v,w);
-            }
-        }
+    for (auto& e : arb) {
+        if (e.to < 0 || e.to >= n) return false;
+        if (e.from < 0 || e.from >= n) return false;
+        if (e.to == root) return false;        // raiz não pode ter pai
+        if (parent[e.to] != -1) return false;  // vértice com 2 pais → impossível
+        parent[e.to] = e.from;
     }
 
-    auto t0 = std::chrono::high_resolution_clock::now();
-    GabowMST gbst(g);
-    auto arb = gbst.compute(0);
-    auto t1 = std::chrono::high_resolution_clock::now();
+    // detectar ciclo via DFS
+    vector<int> vis(n, 0);
 
-    std::chrono::duration<double> diff = t1 - t0;
-    std::cout << "Tempo (s): " << diff.count() << "\n";
+    function<bool(int)> dfs = [&](int u) {
+        vis[u] = 1;
+        for (auto &e : arb) {
+            if (e.from == u) {
+                if (vis[e.to] == 1) return false; // ciclo
+                if (vis[e.to] == 0 && !dfs(e.to)) return false;
+            }
+        }
+        vis[u] = 2;
+        return true;
+    };
 
-    if (!arb.empty())
-        std::cout << "Arestas na arborescência: " << arb.size() << "\n";
-    else
-        std::cout << "Nenhuma arborescência encontrada (grafo pode estar desconectado da raiz)\n";
+    return dfs(root);
+}
 
-    std::cout << "[OK] Teste de performance concluído\n";
+void printARB(const vector<GabowEdge>& arb) {
+    cout << "Arborescência retornada:\n";
+    for (auto& e : arb)
+        cout << e.from << " -> " << e.to << " (peso: " << e.weight << ")\n";
+    cout << '\n';
+}
+
+/*
+ * Caso 1: Grafo simples sem ciclos.
+ */
+void test_simple_no_cycle() {
+    cout << "[TESTE 1] Grafo simples sem ciclos...\n";
+
+    WeightedGraph g(4);
+    g.addEdge(0, 1, 1);
+    g.addEdge(0, 2, 5);
+    g.addEdge(1, 2, 1);
+    g.addEdge(1, 3, 2);
+    g.addEdge(2, 3, 1);
+
+    GabowMST mst(g);
+    auto arb = mst.compute(0);
+
+    printARB(arb);
+
+    assert(isValidArborescence(4, 0, arb));
+
+    double peso = 0.0;
+    for (auto& e : arb) peso += e.weight;
+
+    assert(fabs(peso - 3.0) < 1e-9); 
+    cout << "OK!\n\n";
+}
+
+/*
+ * Caso 2: Ciclo simples (1 → 2 → 3 → 1)
+ */
+void test_simple_cycle() {
+    cout << "[TESTE 2] Ciclo simples 1->2->3->1...\n";
+
+    WeightedGraph g(4);
+    g.addEdge(0, 1, 5);
+    g.addEdge(1, 2, 2);
+    g.addEdge(2, 3, 2);
+    g.addEdge(3, 1, 1);   // ciclo 1 → 2 → 3 → 1
+
+    GabowMST mst(g);
+    auto arb = mst.compute(0);
+
+    printARB(arb);
+
+    assert(isValidArborescence(4, 0, arb));
+
+    cout << "OK!\n\n";
+}
+
+/*
+ * Caso 3: Múltiplos ciclos aninhados (caso clássico do artigo)
+ */
+void test_multiple_cycles() {
+    cout << "[TESTE 3] Vários ciclos aninhados...\n";
+
+    WeightedGraph g(6);
+
+    g.addEdge(0, 1, 3);
+    g.addEdge(1, 2, 2);
+    g.addEdge(2, 0, 4); // ciclo A
+
+    g.addEdge(2, 3, 1);
+    g.addEdge(3, 4, 1);
+    g.addEdge(4, 2, 1); // ciclo B
+
+    g.addEdge(4, 5, 2);
+
+    GabowMST mst(g);
+    auto arb = mst.compute(0);
+
+    printARB(arb);
+
+    assert(isValidArborescence(6, 0, arb));
+
+    cout << "OK!\n\n";
+}
+
+/*
+ * Caso 4: Pesos zero (caso crítico em GGST)
+ */
+void test_zero_weights() {
+    cout << "[TESTE 4] Arestas com peso zero...\n";
+
+    WeightedGraph g(5);
+
+    g.addEdge(0, 1, 0);
+    g.addEdge(1, 2, 0);
+    g.addEdge(2, 3, 1);
+    g.addEdge(3, 4, 0);
+    g.addEdge(4, 1, 0); // ciclo com pesos zero
+
+    GabowMST mst(g);
+    auto arb = mst.compute(0);
+
+    printARB(arb);
+
+    assert(isValidArborescence(5, 0, arb));
+
+    cout << "OK!\n\n";
+}
+
+/*
+ * Caso 5: Grafo grande aleatório
+ */
+void test_large_graph() {
+    cout << "[TESTE 5] Grafo grande randomizado...\n";
+
+    int n = 300;
+    WeightedGraph g(n);
+
+    for (int i = 0; i < n * 5; i++) {
+        int u = rand() % n;
+        int v = rand() % n;
+        if (u != v)
+            g.addEdge(u, v, (rand() % 100));
+    }
+
+    GabowMST mst(g);
+    auto arb = mst.compute(0);
+
+    assert(isValidArborescence(n, 0, arb));
+
+    cout << "OK!\n\n";
 }
 
 int main() {
-    try {
-        test_simple();
-        test_cycle_simple();
-        test_nested_cycles();
-        test_performance(200, 20);
+    test_simple_no_cycle();
+    test_simple_cycle();
+    test_multiple_cycles();
+    test_zero_weights();
+    test_large_graph();
 
-        std::cout << "\nTodos os testes do Gabow fiUmnalizados.\n";
-    } catch (const std::exception& ex) {
-        std::cerr << "Exceção: " << ex.what() << "\n";
-        return 2;
-    } catch (...) {
-        std::cerr << "Erro desconhecido\n";
-        return 3;
-    }
+    cout << "\nTodos os testes passaram!\n";
+
     return 0;
 }

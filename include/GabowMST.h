@@ -1,45 +1,47 @@
 #ifndef GABOW_MST_H
 #define GABOW_MST_H
 
-#include "WeightedGraph.h"
 #include <vector>
-#include <limits>
-#include <stdexcept>
 
-/*
- * GabowMST.h
- * Implementação prática inspirada nas técnicas de Gabow et al.
- */
-
-struct GabowEdge
-{
-  int from;
-  int to;
-  double weight;
-  GabowEdge(int f = -1, int t = -1, double w = 0.0) : from(f), to(t), weight(w) {}
+// Estrutura de aresta: from -> to com peso weight
+struct GabowEdge {
+    int from;
+    int to;
+    double weight;
+    GabowEdge() : from(-1), to(-1), weight(0.0) {}
+    GabowEdge(int u, int v, double w) : from(u), to(v), weight(w) {}
 };
 
-class GabowMST
-{
-private:
-  int n;
-  std::vector<GabowEdge> edges;
-
-  std::vector<GabowEdge> arborescence;
-  double totalWeight;
-
-  static constexpr double INF = std::numeric_limits<double>::infinity();
-
+/*
+ * Classe GabowMST
+ * Interface simples:
+ *  - construtor a partir de WeightedGraph
+ *  - compute(root) -> retorna vetor de GabowEdge (a arborescência)
+ *  - getTotalWeight() -> peso total (somado após compute)
+ *  - printArborescence(...) -> exibe a solução
+ *
+ * Esta classe implementa a versão de contração/expansão inspirada
+ * em Gabow et al. (GGST), cuidando de registrar as arestas escolhidas
+ * em cada nível para permitir reconstrução correta.
+ */
+class GabowMST {
 public:
-  // extrai arestas do WeightedGraph
-  GabowMST(const WeightedGraph &g);
+    GabowMST(const class WeightedGraph &g);
 
-  // Computa a arborescência mínima enraizada em root
-  std::vector<GabowEdge> compute(int root);
+    // calcula a arborescência com raiz 'root' (0..n-1)
+    std::vector<GabowEdge> compute(int root);
 
-  double getTotalWeight() const { return totalWeight; }
+    // retorna o peso total obtido após compute
+    double getTotalWeight() const { return totalWeight; }
 
-  void printArborescence(const std::vector<GabowEdge> &arb) const;
+    // imprime a arborescência (padrão amigável)
+    void printArborescence(const std::vector<GabowEdge> &arb) const;
+
+private:
+    int n; // número de vértices no grafo original
+    std::vector<GabowEdge> edges; // lista de arestas do grafo original
+    std::vector<GabowEdge> arborescence; // resultado após compute
+    double totalWeight;
 };
 
 #endif // GABOW_MST_H
