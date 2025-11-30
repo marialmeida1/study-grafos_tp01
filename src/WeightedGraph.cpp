@@ -93,17 +93,18 @@ WeightedGraph::AdjIterator::AdjIterator(const WeightedGraph& G, int v)
 
 WeightedEdge WeightedGraph::AdjIterator::begin() {
     index = 0;
-    return next();
+    if (G.adj[v].empty()) 
+        return WeightedEdge(-1, -1, -1);
+    return G.adj[v][0];
 }
 
 WeightedEdge WeightedGraph::AdjIterator::next() {
+    index++;
     if (index < (int)G.adj[v].size())
-        return G.adj[v][index++];
-    else
-        return WeightedEdge(-1, -1, -1);
+        return G.adj[v][index];
+    return WeightedEdge(-1, -1, -1);
 }
 
 bool WeightedGraph::AdjIterator::end() {
     return index >= (int)G.adj[v].size();
 }
-
