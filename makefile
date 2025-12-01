@@ -16,6 +16,7 @@ SRC_FILES = \
   $(SRC_DIR)/EdmondsMST.cpp \
   $(SRC_DIR)/TarjanMST.cpp \
   $(SRC_DIR)/GabowMST.cpp \
+  $(SRC_DIR)/KruskalMST.cpp \
   $(SRC_DIR)/main.cpp
 
 # Gera a lista de .o correspondentes em build/
@@ -41,6 +42,7 @@ TEST_SOURCES = \
   $(TEST_DIR)/test_edmonds.cpp \
   $(TEST_DIR)/test_gabow.cpp \
   $(TEST_DIR)/test_tarjan.cpp \
+  $(TEST_DIR)/test_kruskal.cpp \
 
 TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.cpp,$(BUILD_DIR)/tests/%.o,$(TEST_SOURCES))
 TEST_BINS    = $(patsubst $(TEST_DIR)/%.cpp,$(BIN_DIR)/%,$(TEST_SOURCES))
