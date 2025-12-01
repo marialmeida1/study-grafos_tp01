@@ -1,208 +1,207 @@
 #include "EdmondsMST.h"
-#include <iostream>
 #include <algorithm>
-#include <cassert>
-#include <chrono>
+#include <vector>
+#include <map>
+#include <limits>
+#include <cmath>
+#include <iostream>
 
-/*
- * Edmonds/Chu–Liu para Arborescência Geradora Mínima (direcionada).
- * Estrutura geral:
- *   1) Escolher para cada vértice a aresta entrante de menor peso.
- *   2) Detectar ciclos nessas escolhas.
- *   3) Contrair ciclos e ajustar pesos.
- *   4) Resolver recursivamente no grafo contraído.
- *   5) Reexpandir e reconstruir a solução final.
- */
+// Constante para tolerância em comparações de ponto flutuante
+const double EPSILON = 1e-9;
 
-EdmondsMST::EdmondsMST(const WeightedGraph &g)
-{
-    n = g.V();
+WeightedGraph EdmondsMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
+    int V = grafo.V();
+    std::vector<ArestaInterna> arestasIniciais;
+    int idCounter = 0;
 
-    // Extrai todas as arestas do grafo.
-    for (int u = 0; u < n; ++u)
-    {
-        for (int v = 0; v < n; ++v)
-        {
-            if (g.hasEdge(u, v))
-            {
-                edges.emplace_back(u, v, g.getWeight(u, v));
+    // 1. Converter o WeightedGraph para nossa estrutura interna de arestas
+    for (int i = 0; i < V; ++i) {
+        WeightedGraph::AdjIterator it(grafo, i);
+        WeightedEdge e = it.begin();
+        while (e.v != -1) {
+            // Ignora self-loops iniciais, se houver
+            if (e.v != e.w) {
+                arestasIniciais.push_back({e.v, e.w, e.weight, idCounter++});
+            }
+            if (it.end()) break;
+            e = it.next();
+        }
+    }
+
+    // 2. Executar o algoritmo recursivo
+    std::vector<ArestaInterna> arestasSelecionadas = processarEdmonds(V, raiz, arestasIniciais);
+
+    // 3. Reconstruir o Grafo de Saída
+    WeightedGraph arborescencia(V, true);
+    
+    // Precisamos mapear de volta os IDs das arestas para os valores originais
+    // Como modificamos pesos na recursão, usamos o idOriginal para recuperar os dados reais
+    // Recriamos um mapa rápido das arestas originais para consulta
+    std::map<int, WeightedEdge> mapaOriginal;
+    idCounter = 0;
+    for (int i = 0; i < V; ++i) {
+        WeightedGraph::AdjIterator it(grafo, i);
+        WeightedEdge e = it.begin();
+        while (e.v != -1) {
+            if (e.v != e.w) mapaOriginal[idCounter++] = e;
+            if (it.end()) break;
+            e = it.next();
+        }
+    }
+
+    for (const auto& a : arestasSelecionadas) {
+        // Busca a aresta original baseada no ID preservado
+        if (mapaOriginal.count(a.idOriginal)) {
+            WeightedEdge original = mapaOriginal[a.idOriginal];
+            arborescencia.insertEdge(original.v, original.w, original.weight);
+        }
+    }
+
+    return arborescencia;
+}
+
+std::vector<EdmondsMST::ArestaInterna> EdmondsMST::processarEdmonds(int numVertices, int raiz, const std::vector<ArestaInterna>& arestas) {
+    std::vector<ArestaInterna> resultado;
+
+    // --- Passo 1: Seleção Gulosa (Menor aresta de entrada para cada vértice) ---
+    std::vector<int> pai(numVertices, -1);
+    std::vector<double> menorPeso(numVertices, std::numeric_limits<double>::max());
+    std::vector<int> indiceArestaEscolhida(numVertices, -1);
+
+    for (int i = 0; i < (int)arestas.size(); ++i) {
+        const auto& aresta = arestas[i];
+        if (aresta.v != aresta.u && aresta.v != raiz) { // Ignora loops e arestas entrando na raiz
+            if (aresta.peso < menorPeso[aresta.v]) {
+                menorPeso[aresta.v] = aresta.peso;
+                pai[aresta.v] = aresta.u;
+                indiceArestaEscolhida[aresta.v] = i;
             }
         }
     }
 
-    totalWeight = 0.0;
-}
+    // --- Passo 2: Detecção de Ciclos ---
+    std::vector<int> grupo(numVertices, -1); // ID do novo super-vértice
+    std::vector<bool> visitado(numVertices, false);
+    std::vector<bool> naPilha(numVertices, false);
+    
+    int contagemSuperVertices = 0;
+    bool cicloEncontrado = false;
 
-/*
- * Função principal do Edmonds:
- * - Recebe N vértices, raiz, e lista de arestas.
- * - Retorna uma lista com as arestas da arborescência mínima.
- */
-static std::vector<EdmondsEdge> edmonds(int N, int root, const std::vector<EdmondsEdge> &E)
-{
-    const double INF = std::numeric_limits<double>::infinity();
-    std::vector<EdmondsEdge> result;
+    // Busca ciclos formados pelas arestas escolhidas
+    for (int i = 0; i < numVertices; ++i) {
+        if (i == raiz || grupo[i] != -1 || pai[i] == -1) continue;
 
-    if (N == 0)
-        return result;
+        int curr = i;
+        std::vector<int> caminho;
+        while (curr != -1 && curr != raiz && !visitado[curr]) {
+            visitado[curr] = true;
+            naPilha[curr] = true;
+            caminho.push_back(curr);
+            curr = pai[curr];
+        }
 
-    // 1) Seleciona aresta entrante mínima para cada vértice.
-    std::vector<double> inWeight(N, INF);
-    std::vector<int> pre(N, -1);
+        // Se encontrou um nó que está na pilha atual, fechou um ciclo
+        if (curr != -1 && curr != raiz && naPilha[curr]) {
+            cicloEncontrado = true;
+            int vCiclo = curr;
+            // Marca todos do ciclo com o novo ID
+            do {
+                grupo[vCiclo] = contagemSuperVertices;
+                vCiclo = pai[vCiclo];
+            } while (vCiclo != curr);
+            contagemSuperVertices++;
+        }
 
-    for (const auto &e : E)
-    {
-        if (e.from != e.to && e.weight < inWeight[e.to])
-        {
-            inWeight[e.to] = e.weight;
-            pre[e.to] = e.from;
+        // Limpa a pilha para a próxima iteração
+        for (int v : caminho) naPilha[v] = false;
+    }
+
+    // CASO BASE: Se não houver ciclos, retornamos as arestas escolhidas
+    if (!cicloEncontrado) {
+        for (int i = 0; i < numVertices; ++i) {
+            if (i != raiz && indiceArestaEscolhida[i] != -1) {
+                resultado.push_back(arestas[indiceArestaEscolhida[i]]);
+            }
+        }
+        return resultado;
+    }
+
+    // --- Passo 3: Contração (Recursão) ---
+    int numVerticesContraidos = contagemSuperVertices;
+    std::vector<int> mapeamento(numVertices); // Mapeia old_id -> new_id
+    
+    // Mapeia vértices que NÃO estão em ciclos
+    for (int i = 0; i < numVertices; ++i) {
+        if (grupo[i] == -1) {
+            grupo[i] = numVerticesContraidos;
+            mapeamento[i] = numVerticesContraidos;
+            numVerticesContraidos++;
+        } else {
+            mapeamento[i] = grupo[i]; // Vértices do ciclo assumem ID 0..k-1
         }
     }
 
-    inWeight[root] = 0;
-    pre[root] = -1;
+    std::vector<ArestaInterna> novasArestas;
+    for (const auto& a : arestas) {
+        int u_novo = mapeamento[a.u];
+        int v_novo = mapeamento[a.v];
 
-    // Se algum vértice exceto raiz não tem aresta entrante → impossível.
-    for (int v = 0; v < N; ++v)
-    {
-        if (v != root && inWeight[v] == INF)
-            return {};
-    }
-
-    // 2) Detecta ciclos seguindo pre[].
-    std::vector<int> id(N, -1), vis(N, -1);
-    int components = 0;
-
-    for (int v = 0; v < N; ++v)
-    {
-        if (v == root)
-            continue;
-
-        int u = v;
-        while (u != root && id[u] == -1 && vis[u] != v)
-        {
-            vis[u] = v;
-            u = pre[u];
-        }
-
-        // Detectou ciclo: marca todos os nós do ciclo com mesmo id.
-        if (u != root && id[u] == -1 && vis[u] == v)
-        {
-            for (int x = pre[u]; x != u; x = pre[x])
-                id[x] = components;
-            id[u] = components++;
+        if (u_novo != v_novo) {
+            ArestaInterna nova = a;
+            nova.u = u_novo;
+            nova.v = v_novo;
+            
+            // Se o destino original estava num ciclo, ajustamos o peso
+            // Novo Peso = Peso Original - Peso da aresta do ciclo que entra em v
+            if (grupo[a.v] < contagemSuperVertices) { // Significa que 'v' fazia parte de um super-vértice
+                nova.peso -= menorPeso[a.v];
+            }
+            novasArestas.push_back(nova);
         }
     }
 
-    // Se nenhum ciclo, resultado é pre[v] → v.
-    if (components == 0)
-    {
-        for (int v = 0; v < N; ++v)
-        {
-            if (v != root)
-                result.emplace_back(pre[v], v, inWeight[v]);
+    int novaRaiz = mapeamento[raiz];
+    std::vector<ArestaInterna> arborescenciaContraida = processarEdmonds(numVerticesContraidos, novaRaiz, novasArestas);
+
+    // --- Passo 4: Expansão ---
+    // Recupera as arestas originais baseadas no idOriginal
+    std::vector<int> arestaEntradaCiclo(contagemSuperVertices, -1); // Qual aresta quebrou o ciclo K?
+
+    for (const auto& a_contraida : arborescenciaContraida) {
+        // Encontra a aresta original correspondente (pelo idOriginal que foi preservado)
+        // Precisamos achar os dados originais dessa aresta na lista 'arestas' deste escopo
+        // (Isso poderia ser otimizado com um map, mas linear é aceitável aqui)
+        ArestaInterna arestaReal;
+        bool achou = false;
+        
+        // Procura na lista local de arestas quem tem esse idOriginal
+        for(const auto& original : arestas) {
+            if(original.idOriginal == a_contraida.idOriginal) {
+                arestaReal = original;
+                achou = true;
+                break;
+            }
         }
-        return result;
-    }
 
-    // 3) Atribui ids únicos aos vértices fora de ciclos.
-    for (int v = 0; v < N; ++v)
-    {
-        if (id[v] == -1)
-            id[v] = components++;
-    }
-
-    int M = components; // número de vértices após contração
-
-    // Constrói arestas do grafo contraído com pesos ajustados.
-    std::vector<EdmondsEdge> E2;
-    for (const auto &e : E)
-    {
-        int u = id[e.from];
-        int v = id[e.to];
-        if (u != v)
-            E2.emplace_back(u, v, e.weight - inWeight[e.to]);
-    }
-
-    // 4) Resolve recursivamente no grafo contraído.
-    std::vector<EdmondsEdge> rec = edmonds(M, id[root], E2);
-
-    if (rec.empty() && M > 1)
-        return {};
-
-    // 5) Reconstrução: começa com todas pre[v] → v.
-    std::vector<EdmondsEdge> finalEdges;
-    for (int v = 0; v < N; ++v)
-    {
-        if (v != root)
-            finalEdges.emplace_back(pre[v], v, inWeight[v]);
-    }
-
-    // Substitui arestas de entrada para componentes contraídas.
-    const double EPS = 1e-9;
-    for (const auto &r : rec)
-    {
-        int a = r.from, b = r.to;
-
-        // Busca aresta original correspondente ao componente a→b.
-        for (const auto &e : E)
-        {
-            if (id[e.from] == a && id[e.to] == b)
-            {
-                double adjW = e.weight - inWeight[e.to];
-                if (std::abs(adjW - r.weight) < EPS)
-                {
-                    // Substitui aresta que entra no componente b.
-                    for (auto &fe : finalEdges)
-                    {
-                        if (id[fe.to] == b)
-                        {
-                            fe = EdmondsEdge(e.from, e.to, e.weight);
-                            break;
-                        }
-                    }
-                    break;
-                }
+        if(achou) {
+            resultado.push_back(arestaReal);
+            // Se o destino dessa aresta fazia parte de um ciclo (é um super-vértice < contagem)
+            // Marcamos qual super-vértice foi "invadido" para removermos a aresta interna dele depois
+            if (grupo[arestaReal.v] < contagemSuperVertices) {
+                arestaEntradaCiclo[grupo[arestaReal.v]] = arestaReal.v;
             }
         }
     }
 
-    // Limpa arestas inválidas.
-    result.clear();
-    for (const auto &e : finalEdges)
-        if (e.from >= 0 && e.to >= 0)
-            result.push_back(e);
-
-    return result;
-}
-
-std::vector<EdmondsEdge> EdmondsMST::compute(int root)
-{
-    if (root < 0 || root >= n)
-        throw std::invalid_argument("Raiz fora do intervalo válido.");
-
-    arborescence = edmonds(n, root, edges);
-
-    if (arborescence.empty() && n > 1)
-        return arborescence;
-
-    totalWeight = 0.0;
-    for (const auto &e : arborescence)
-        totalWeight += e.weight;
-
-    return arborescence;
-}
-
-void EdmondsMST::printArborescence(const std::vector<EdmondsEdge> &arb) const
-{
-    std::cout << "\n--- Arborescência Geradora Mínima (Edmonds) ---\n";
-    double sum = 0.0;
-
-    for (const auto &e : arb)
-    {
-        std::cout << e.from << " -> " << e.to << " (peso: " << e.weight << ")\n";
-        sum += e.weight;
+    // Adiciona as arestas internas dos ciclos, exceto aquela que foi substituída pela entrada externa
+    for (int i = 0; i < numVertices; ++i) {
+        // Se i faz parte de um ciclo (grupo[i] < contagem) E NÃO é o ponto de entrada desse ciclo
+        if (grupo[i] < contagemSuperVertices && arestaEntradaCiclo[grupo[i]] != i) {
+             if (indiceArestaEscolhida[i] != -1) {
+                 resultado.push_back(arestas[indiceArestaEscolhida[i]]);
+             }
+        }
     }
 
-    std::cout << "Peso total: " << sum << "\n";
+    return resultado;
 }

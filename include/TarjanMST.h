@@ -3,37 +3,18 @@
 
 #include "WeightedGraph.h"
 #include <vector>
-#include <limits>
-
-struct TarjanEdge {
-    int from, to;
-    double weight;
-    TarjanEdge(int f, int t, double w) : from(f), to(t), weight(w) {}
-};
 
 class TarjanMST {
-private:
-    std::vector<TarjanEdge> edges;
-    int numVertices;
-    
-    // Estruturas auxiliares para o algoritmo
-    std::vector<double> minCost;
-    std::vector<int> parent;
-    std::vector<int> id;
-    std::vector<int> visit;
-    std::vector<int> inCycle;
-    
-    // Métodos auxiliares
-    void findMinIncomingEdges();
-    bool hasCycle(int root);
-    void contractCycle(int root);
-    void expandSolution();
-    
 public:
-    TarjanMST(const WeightedGraph& graph);
-    std::vector<TarjanEdge> findMinimumSpanningArborescence(int root);
-    double getTotalWeight() const;
-    void printArborescence(const std::vector<TarjanEdge>& arborescence) const;
+    /**
+     * Implementação eficiente do algoritmo de Arborescência Geradora Mínima
+     * baseada no artigo de Tarjan (1977), utilizando Skew Heaps e Union-Find.
+     * Complexidade esperada: O(E log V).
+     * * @param grafo Grafo direcionado ponderado.
+     * @param raiz Vértice raiz da arborescência.
+     * @return Novo grafo contendo apenas as arestas da arborescência.
+     */
+    static WeightedGraph obterArborescencia(WeightedGraph& grafo, int raiz);
 };
 
-#endif
+#endif // TARJAN_MST_H

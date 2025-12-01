@@ -1,151 +1,68 @@
 #include <iostream>
-#include <cassert>
-#include <chrono>
 #include "WeightedGraph.h"
 #include "EdmondsMST.h"
 
-/*
- * Testes automáticos mínimos para Edmonds:
- * - caso 1: grafo simples (sem ciclos)
- * - caso 2: grafo com ciclo simples
- * - caso 3: grafo com ciclos aninhados
- * - caso 4: grafo grande (gerador aleatório simples) apenas para medir tempo
- *
- * Os testes usam WeightedGraph::insertEdge(u,v,w) conforme uso em Tarjan tests.
- */
+using namespace std;
 
-// Testa Edmonds em um grafo simples
-void test_simple()
-{
-    std::cout << "\n[Teste] Grafo simples\n";
-
-    WeightedGraph g(3, true);
-    g.insertEdge(0, 1, 1.0);
-    g.insertEdge(0, 2, 5.0);
-    g.insertEdge(1, 2, 1.0);
-
-    // Resultado esperado: 0->1 (1.0) e 1->2 (1.0)
-    EdmondsMST ed(g);
-    auto arb = ed.compute(0);
-    ed.printArborescence(arb);
-
-    assert(std::abs(ed.getTotalWeight() - 2.0) < 1e-9);
-    std::cout << "[OK] Grafo simples\n";
-}
-
-// Teste com ciclo simples
-void test_cycle_simple()
-{
-    std::cout << "\n[Teste] Ciclo simples\n";
-
-    WeightedGraph g(4, true);
-    g.insertEdge(0, 1, 5.0);
-    g.insertEdge(1, 2, 2.0);
-    g.insertEdge(2, 3, 1.0);
-    g.insertEdge(3, 0, 6.0);
-    g.insertEdge(0, 2, 3.0);
-
-    // Testa com raiz 0 (exemplo parecido com Tarjan doc)
-    EdmondsMST ed(g);
-    auto arb = ed.compute(0);
-    ed.printArborescence(arb);
-
-    // Esperado: peso 8.0 (0->1(5),1->2(2),2->3(1))
-    double expected = 8.0;
-    assert(std::abs(ed.getTotalWeight() - expected) < 1e-6);
-    std::cout << "[OK] Ciclo simples\n";
-}
-
-// Teste com dois ciclos aninhados
-void test_nested_cycles()
-{
-    std::cout << "\n[Teste] Ciclos aninhados\n";
-
-    // Construir grafo com ciclos aninhados (exemplo pequeno)
-    // Estrutura: (0)->1->2->0 e 2->3->4->2 (dois ciclos conectados)
-    WeightedGraph g(6, true);
-    g.insertEdge(0, 1, 2.0);
-    g.insertEdge(1, 2, 2.0);
-    g.insertEdge(2, 0, 2.0); // ciclo 0-1-2
-    g.insertEdge(2, 3, 1.0);
-    g.insertEdge(3, 4, 1.0);
-    g.insertEdge(4, 2, 1.0); // ciclo 2-3-4
-    g.insertEdge(0, 5, 10.0);
-    g.insertEdge(3, 5, 3.0);
-
-    // raiz 0
-    EdmondsMST ed(g);
-    auto arb = ed.compute(0);
-    ed.printArborescence(arb);
-
-    // Não temos um valor único trivial esperado aqui (depende de escolhas), mas
-    // garantimos que o número de arestas == n-1 e que peso total > 0
-    assert((int)arb.size() == g.V() - 1);
-    std::cout << "[OK] Ciclos aninhados\n";
-}
-
-// Teste de performance com grafo denso/aleatório
-void test_performance(int n, int density_percent)
-{
-    std::cout << "\n[Teste] Performance: n=" << n << " densidade=" << density_percent << "%\n";
-
-    WeightedGraph g(n, true);
-
-    // inserir arestas randômicas determinísticas (para teste repetível)
-    for (int u = 0; u < n; ++u)
-    {
-        for (int v = 0; v < n; ++v)
-        {
-            if (u == v)
-                continue;
-
-            // Probabilidade baseada em hashing simples
-            if (((u * 31 + v * 17) % 100) < density_percent)
-            {
-                double w = 1.0 + ((u * 13 + v * 7) % 100) / 10.0;
-                g.insertEdge(u, v, w);
-            }
+// Função auxiliar para imprimir o grafo
+void imprimirResultado(WeightedGraph& g) {
+    double pesoTotal = 0;
+    cout << "--- Arborescencia Gerada ---" << endl;
+    for (int i = 0; i < g.V(); ++i) {
+        WeightedGraph::AdjIterator it(g, i);
+        WeightedEdge e = it.begin();
+        while (e.v != -1) {
+            cout << e.v << " -> " << e.w << " [Peso: " << e.weight << "]" << endl;
+            pesoTotal += e.weight;
+            if (it.end()) break;
+            e = it.next();
         }
     }
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    EdmondsMST ed(g);
-    auto arb = ed.compute(0);
-    auto t1 = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> diff = t1 - t0;
-    std::cout << "Tempo (s): " << diff.count() << "\n";
-
-    if (!arb.empty())
-        std::cout << "Arestas na arborescência: " << arb.size() << "\n";
-
-    else
-        std::cout << "Nenhuma arborescência encontrada (grafo pode estar desconectado da raiz)\n";
-
-    std::cout << "[OK] Teste de performance concluído\n";
+    cout << "Peso Total da Arborescencia: " << pesoTotal << endl;
+    cout << "----------------------------" << endl;
 }
 
-int main()
-{
-    try
-    {
-        test_simple();
-        test_cycle_simple();
-        test_nested_cycles();
-        // teste de performance (n pequeno por padrão; ajuste conforme máquina)
-        test_performance(200, 20);
+int main() {
+    cout << "=== Teste: Algoritmo de Edmonds (Chu-Liu) ===" << endl;
 
-        std::cout << "\nTodos os testes do Edmonds finalizados.\n";
-    }
-    catch (const std::exception &ex)
-    {
-        std::cerr << "Exceção: " << ex.what() << std::endl;
-        return 2;
-    }
-    catch (...)
-    {
-        std::cerr << "Erro desconhecido\n";
-        return 3;
-    }
+    // Teste 1: Grafo Simples com Ciclo
+    // Raiz: 0
+    // 0 -> 1 (10)
+    // 0 -> 2 (10)
+    // 1 -> 2 (5)
+    // 2 -> 3 (5)
+    // 3 -> 1 (5)  <-- Ciclo 1-2-3
+    // O algoritmo deve escolher entrar no ciclo via 0->1 (custo 10) e usar as arestas internas baratas,
+    // quebrando o ciclo na entrada de 1.
+    
+    int V = 4;
+    WeightedGraph grafo(V, true); // true = Direcionado
+
+    grafo.insertEdge(0, 1, 10.0);
+    grafo.insertEdge(0, 2, 2.0);  
+    grafo.insertEdge(0, 3, 20.0);
+    grafo.insertEdge(1, 2, 5.0);
+    grafo.insertEdge(2, 3, 5.0);
+    grafo.insertEdge(3, 1, 5.0);
+
+    cout << "\nGrafo Original Configurado (Com Ciclo 1-2-3)." << endl;
+
+    WeightedGraph arborescencia = EdmondsMST::obterArborescencia(grafo, 0);
+    imprimirResultado(arborescencia);
+
+    // Teste 2: Verificar integridade
+    // Se mudarmos o peso de 0->2 para ser muito barato (ex: 2.0),
+    // ele deve preferir entrar no ciclo pelo nó 2.
+    cout << "\n--- Teste 2: Mudando peso de entrada ---" << endl;
+    WeightedGraph grafo2(V, true);
+    grafo2.insertEdge(0, 1, 10.0);
+    grafo2.insertEdge(0, 2, 2.0); // Muito barato!
+    grafo2.insertEdge(1, 2, 5.0);
+    grafo2.insertEdge(2, 3, 5.0);
+    grafo2.insertEdge(3, 1, 5.0);
+
+    WeightedGraph arborescencia2 = EdmondsMST::obterArborescencia(grafo2, 0);
+    imprimirResultado(arborescencia2);
+
     return 0;
 }

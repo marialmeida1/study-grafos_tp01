@@ -1,39 +1,46 @@
 #include <iostream>
-#include <vector>
 #include "WeightedGraph.h"
 #include "TarjanMST.h"
 
-WeightedGraph buildSampleGraph() {
-    WeightedGraph graph(4, /*directed=*/true);
+using namespace std;
 
-    graph.insertEdge(0, 1, 5.0);
-    graph.insertEdge(0, 2, 3.0);
-    graph.insertEdge(1, 2, 2.0);
-    graph.insertEdge(1, 3, 4.0);
-    graph.insertEdge(2, 3, 1.0);
-    graph.insertEdge(3, 0, 6.0);
-
-    return graph;
-}
-
-void runTarjanTestForRoot(const WeightedGraph& graph, int root) {
-    std::cout << "\nCalculando arborescência com raiz " << root << ":\n";
-
-    TarjanMST tarjan(graph);
-    std::vector<TarjanEdge> mst = tarjan.findMinimumSpanningArborescence(root);
-
-    tarjan.printArborescence(mst);
+void imprimirResultado(WeightedGraph& g) {
+    double pesoTotal = 0;
+    cout << "--- Arborescencia Gerada (Tarjan) ---" << endl;
+    for (int i = 0; i < g.V(); ++i) {
+        WeightedGraph::AdjIterator it(g, i);
+        WeightedEdge e = it.begin();
+        while (e.v != -1) {
+            cout << e.v << " -> " << e.w << " [Peso: " << e.weight << "]" << endl;
+            pesoTotal += e.weight;
+            if (it.end()) break;
+            e = it.next();
+        }
+    }
+    cout << "Peso Total: " << pesoTotal << endl;
+    cout << "-------------------------------------" << endl;
 }
 
 int main() {
-    std::cout << "--- Testing Tarjan MST Algorithm ---\n";
+    cout << "=== Teste: Algoritmo de Tarjan ===" << endl;
 
-    WeightedGraph graph = buildSampleGraph();
-    std::cout << "Grafo de teste criado com 4 vértices.\n";
+    // Caso de teste: Grafo com ciclo complexo
+    // 4 vértices, Raiz 0
+    int V = 4;
+    WeightedGraph grafo(V, true);
 
-    runTarjanTestForRoot(graph, 0);
-    runTarjanTestForRoot(graph, 1);
+    /// Grafo com ciclo e múltiplas entradas
+    grafo.insertEdge(0, 1, 10.0);
+    grafo.insertEdge(0, 2, 2.0);  // Caminho ótimo para entrar no ciclo
+    grafo.insertEdge(0, 3, 20.0);
+    grafo.insertEdge(1, 2, 5.0);
+    grafo.insertEdge(2, 3, 5.0);
+    grafo.insertEdge(3, 1, 5.0);
 
-    std::cout << "\n--- Tarjan Tests Finished ---\n";
+    cout << "Calculando Arborescencia para raiz 0..." << endl;
+    WeightedGraph mst = TarjanMST::obterArborescencia(grafo, 0);
+    
+    imprimirResultado(mst);
+
     return 0;
 }

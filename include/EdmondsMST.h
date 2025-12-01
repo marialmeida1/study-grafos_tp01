@@ -3,49 +3,29 @@
 
 #include "WeightedGraph.h"
 #include <vector>
-#include <limits>
-#include <stdexcept>
+#include <list>
 
-/*
- * EdmondsMST.h
- * Implementação do algoritmo de Edmonds (Chu-Liu/Edmonds) para
- * Arborescência Geradora Mínima Direcionada.
- */
-
-struct EdmondsEdge
-{
-    int from;
-    int to;
-    double weight;
-    EdmondsEdge(int f = -1, int t = -1, double w = 0.0) : from(f), to(t), weight(w) {}
-};
-
-class EdmondsMST
-{
-private:
-    int n;                          // número de vértices
-    std::vector<EdmondsEdge> edges; // lista de arestas do grafo
-
-    // Resultado
-    std::vector<EdmondsEdge> arborescence;
-    double totalWeight;
-
-    // Constantes
-    static constexpr double INF = std::numeric_limits<double>::infinity();
-
+class EdmondsMST {
 public:
-    // Construtor: extrai arestas de WeightedGraph (usa interface observada no projeto)
-    EdmondsMST(const WeightedGraph &g);
+    /**
+     * Calcula a Arborescência Geradora Mínima (Minimum Spanning Arborescence)
+     * para um grafo direcionado, dado um vértice raiz.
+     * * @param grafo O grafo de entrada (deve ser direcionado).
+     * @param raiz O ID do vértice raiz (0 a V-1).
+     * @return Um novo WeightedGraph contendo a arborescência.
+     */
+    static WeightedGraph obterArborescencia(WeightedGraph& grafo, int raiz);
 
-    // Computa a arborescência mínima com raiz `root`.
-    // Retorna vetor de arestas (size n-1) e define totalWeight.
-    std::vector<EdmondsEdge> compute(int root);
+private:
+    // Estrutura interna para facilitar a manipulação de arestas durante a recursão
+    struct ArestaInterna {
+        int u, v;
+        double peso;
+        int idOriginal; // Rastreia qual aresta real é essa (para reconstrução)
+    };
 
-    // Acessores
-    double getTotalWeight() const { return totalWeight; }
-
-    // Imprime a arborescência no formato "u -> v (peso)"
-    void printArborescence(const std::vector<EdmondsEdge> &arb) const;
+    // Método auxiliar recursivo que realiza a lógica de Chu-Liu/Edmonds
+    static std::vector<ArestaInterna> processarEdmonds(int numVertices, int raiz, const std::vector<ArestaInterna>& arestas);
 };
 
 #endif // EDMONDS_MST_H
