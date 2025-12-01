@@ -45,6 +45,8 @@ TEST_SOURCES = \
   $(TEST_DIR)/test_gabow.cpp \
   $(TEST_DIR)/test_tarjan.cpp \
   $(TEST_DIR)/test_kruskal.cpp \
+  $(TEST_DIR)/test_tarjan_preprocessing.cpp \
+  $(TEST_DIR)/test_tarjan_presets.cpp \
 
 TEST_OBJECTS = $(patsubst $(TEST_DIR)/%.cpp,$(BUILD_DIR)/tests/%.o,$(TEST_SOURCES))
 TEST_BINS    = $(patsubst $(TEST_DIR)/%.cpp,$(BIN_DIR)/%,$(TEST_SOURCES))
