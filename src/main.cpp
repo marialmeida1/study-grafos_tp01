@@ -13,25 +13,25 @@ int main(int argc, char** argv) {
 
     // 1. Kruskal (Baseline Não Direcionado)
     std::cout << "--- [1] KRUSKAL (MST) ---" << std::endl;
-    ImageSegmentation::runSegmentation(inputImage, "out_kruskal.png", 
+    ImageSegmentation::runSegmentation(inputImage, "/img/out_kruskal.png", 
                                        Strategy::KRUSKAL_MST, threshold);
     std::cout << std::endl;
 
     // 2. Tarjan (MSA Otimizada)
     std::cout << "--- [2] TARJAN (MSA Otimizada) ---" << std::endl;
-    ImageSegmentation::runSegmentation(inputImage, "out_tarjan.png", 
+    ImageSegmentation::runSegmentation(inputImage, "/img/out_tarjan.png", 
                                        Strategy::TARJAN_MSA, threshold);
     std::cout << std::endl;
 
     // 3. Gabow (MSA Path Growing)
     std::cout << "--- [3] GABOW (MSA Path Growing) ---" << std::endl;
-    ImageSegmentation::runSegmentation(inputImage, "out_gabow.png", 
+    ImageSegmentation::runSegmentation(inputImage, "/img/out_gabow.png", 
                                        Strategy::GABOW_MSA, threshold);
     std::cout << std::endl;
 
     // 4. Edmonds (MSA Recursiva - Pode ser mais lento em imagens grandes)
     std::cout << "--- [4] EDMONDS (MSA Recursiva) ---" << std::endl;
-    ImageSegmentation::runSegmentation(inputImage, "out_edmonds.png", 
+    ImageSegmentation::runSegmentation(inputImage, "/img/out_edmonds.png", 
                                        Strategy::EDMONDS_MSA, threshold);
     std::cout << std::endl;
 
