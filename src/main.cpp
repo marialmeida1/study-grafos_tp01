@@ -1,76 +1,41 @@
+#include "ImageSegmentation.h"
 #include <iostream>
-#include "Graph.h"
+#include <string>
 
-#ifdef WEIGHTED_GRAPH
-#include "WeightedGraph.h"
-#endif
+int main(int argc, char** argv) {
+    // Permite passar a imagem via linha de comando ou usa o padrão
+    std::string inputImage = (argc > 1) ? argv[1] : "input.jpg"; // Certifique-se de ter essa imagem
+    double threshold = 50.0; // Ajuste este valor (30.0 a 80.0) para controlar a sensibilidade
 
-// -----------------------------------------------------------------------------
-// Testes de grafos não ponderados
-// -----------------------------------------------------------------------------
-void testUnweightedGraphs() {
-    std::cout << "\n--- Testing Unweighted, Directed Graph ---\n";
+    std::cout << "=== BENCHMARK DE SEGMENTACAO ===" << std::endl;
+    std::cout << "Imagem Alvo: " << inputImage << std::endl;
+    std::cout << "Threshold: " << threshold << std::endl << std::endl;
 
-    Graph g_dir(5, /*directed=*/true);
-    g_dir.insertEdge(0, 1);
-    g_dir.insertEdge(0, 2);
+    // 1. Kruskal (Baseline Não Direcionado)
+    std::cout << "--- [1] KRUSKAL (MST) ---" << std::endl;
+    ImageSegmentation::runSegmentation(inputImage, "out_kruskal.png", 
+                                       Strategy::KRUSKAL_MST, threshold);
+    std::cout << std::endl;
 
-    std::cout << "Initial Directed Graph:\n";
-    g_dir.print();
+    // 2. Tarjan (MSA Otimizada)
+    std::cout << "--- [2] TARJAN (MSA Otimizada) ---" << std::endl;
+    ImageSegmentation::runSegmentation(inputImage, "out_tarjan.png", 
+                                       Strategy::TARJAN_MSA, threshold);
+    std::cout << std::endl;
 
-    std::cout << "Edge 0->1? " << (g_dir.hasEdge(0, 1) ? "Yes" : "No") << '\n';
-    std::cout << "Edge 1->0? " << (g_dir.hasEdge(1, 0) ? "Yes" : "No") << '\n';
+    // 3. Gabow (MSA Path Growing)
+    std::cout << "--- [3] GABOW (MSA Path Growing) ---" << std::endl;
+    ImageSegmentation::runSegmentation(inputImage, "out_gabow.png", 
+                                       Strategy::GABOW_MSA, threshold);
+    std::cout << std::endl;
 
-    std::cout << "\n--- Testing Unweighted, Undirected Graph ---\n";
+    // 4. Edmonds (MSA Recursiva - Pode ser mais lento em imagens grandes)
+    std::cout << "--- [4] EDMONDS (MSA Recursiva) ---" << std::endl;
+    ImageSegmentation::runSegmentation(inputImage, "out_edmonds.png", 
+                                       Strategy::EDMONDS_MSA, threshold);
+    std::cout << std::endl;
 
-    Graph g_undir(5, /*directed=*/false);
-    g_undir.insertEdge(0, 1);
-    g_undir.insertEdge(0, 2);
+    std::cout << "Benchmark concluido. Verifique os arquivos 'out_*.png'." << std::endl;
 
-    std::cout << "Initial Undirected Graph:\n";
-    g_undir.print();
-
-    std::cout << "Edge 0-1? " << (g_undir.hasEdge(0, 1) ? "Yes" : "No") << '\n';
-    std::cout << "Edge 1-0? " << (g_undir.hasEdge(1, 0) ? "Yes" : "No") << '\n';
-}
-
-// -----------------------------------------------------------------------------
-// Testes de grafos ponderados
-// Só é compilado se WEIGHTED_GRAPH estiver definido
-// -----------------------------------------------------------------------------
-#ifdef WEIGHTED_GRAPH
-void testWeightedGraphs() {
-    std::cout << "\n--- Testing Weighted, Directed Graph ---\n";
-
-    WeightedGraph wg_dir(5, /*directed=*/true);
-    wg_dir.insertEdge(0, 1, 2.5);
-    wg_dir.insertEdge(1, 2, 3.1);
-
-    std::cout << "Weight of 0->1: " << wg_dir.getWeight(0, 1) << '\n';
-    std::cout << "Weight of 1->0: " 
-              << wg_dir.getWeight(1, 0)
-              << " (should be -1 as it doesn't exist)\n";
-
-    std::cout << "\n--- Testing Weighted, Undirected Graph ---\n";
-
-    WeightedGraph wg_undir(5, /*directed=*/false);
-    wg_undir.insertEdge(0, 1, 2.5);
-    wg_undir.insertEdge(1, 2, 3.1);
-
-    std::cout << "Weight of 0-1: " << wg_undir.getWeight(0, 1) << '\n';
-    std::cout << "Weight of 1-0: " << wg_undir.getWeight(1, 0) << '\n';
-}
-#endif
-
-int main() {
-    std::cout << "--- Running Graph Tests ---\n";
-
-    testUnweightedGraphs();
-
-#ifdef WEIGHTED_GRAPH
-    testWeightedGraphs();
-#endif
-
-    std::cout << "\n--- Tests Finished ---\n";
     return 0;
 }

@@ -17,7 +17,9 @@ SRC_FILES = \
   $(SRC_DIR)/TarjanMST.cpp \
   $(SRC_DIR)/GabowMST.cpp \
   $(SRC_DIR)/KruskalMST.cpp \
+  $(SRC_DIR)/ImageSegmentation.cpp \
   $(SRC_DIR)/main.cpp
+
 
 # Gera a lista de .o correspondentes em build/
 OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC_FILES))

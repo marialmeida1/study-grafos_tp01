@@ -7,11 +7,12 @@
 class GabowMST {
 public:
     /**
-     * Implementação do algoritmo de Gabow, Galil, Spencer e Tarjan (1986).
-     * Utiliza a estratégia de "Path Growing" com Skew Heaps.
-     * * @param grafo O grafo direcionado de entrada.
-     * @param raiz O vértice raiz da arborescência.
-     * @return Um novo WeightedGraph contendo a arborescência mínima.
+     * Implementação robusta do algoritmo de Gabow (1986) para Arborescência Geradora Mínima.
+     * Utiliza estratégia iterativa (Path Growing) com Skew Heaps e Lazy Propagation.
+     * Ideal para grafos grandes (ex: imagens).
+     * * @param grafo Grafo direcionado ponderado.
+     * @param raiz Vértice raiz da arborescência (geralmente 0 para imagens).
+     * @return Arborescência resultante como um novo WeightedGraph.
      */
     static WeightedGraph obterArborescencia(WeightedGraph& grafo, int raiz);
 };
