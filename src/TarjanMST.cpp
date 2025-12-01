@@ -7,10 +7,6 @@
 
 using namespace std;
 
-// =========================================================
-// Estruturas Auxiliares
-// =========================================================
-
 struct SkewNode {
     double peso;            
     double propagacaoLazy;  
@@ -103,10 +99,6 @@ struct EstadoCiclo {
     vector<int> arestasEscolhidas; 
 };
 
-// =========================================================
-// Implementação Principal
-// =========================================================
-
 WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
     int V = grafo.V();
     vector<WeightedEdge> arestasReais;
@@ -114,7 +106,6 @@ WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
     
     TarjanSolver solver(V);
 
-    // Inicialização
     for (int i = 0; i < V; ++i) {
         WeightedGraph::AdjIterator it(grafo, i);
         WeightedEdge e = it.begin();
@@ -155,40 +146,30 @@ WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
             int u_origem = solver.find(minEdge->u);
 
             if (u_origem == curr) {
-                // Auto-loop (já tratado pelo while acima, mas por segurança)
                 continue;
             } 
             else if (caminhoVisitado[u_origem] == i) {
-                // === CICLO DETECTADO ===
                 int novoSuperNo = numSuperVertices++;
                 EstadoCiclo infoCiclo;
                 infoCiclo.idSuperNo = novoSuperNo;
 
-                // PASSO 1: Identificar os nós do ciclo sem alterar o DSU ainda
-                // Percorre para trás usando arestaEntrada até voltar ao 'curr'
                 int iter = u_origem;
                 while (iter != curr) {
                     infoCiclo.nosNoCiclo.push_back(iter);
                     int edgeId = arestaEntrada[iter];
                     iter = solver.find(arestasReais[edgeId].v); // Retrocede
                 }
-                // Adiciona o próprio curr (que fecha o ciclo)
                 infoCiclo.nosNoCiclo.push_back(curr);
                 
-                // PASSO 2: Realizar fusão (Merge e Unite)
                 for (int nodeDoCiclo : infoCiclo.nosNoCiclo) {
-                    // Salva a aresta escolhida para este nó antes de fundir
                     infoCiclo.arestasEscolhidas.push_back(arestaEntrada[nodeDoCiclo]);
                     
-                    // Atualiza Hierarquia
                     paiHierarquia[nodeDoCiclo] = novoSuperNo;
 
-                    // Lazy Update e Merge de Heaps
                     double pesoArestaCiclo = arestasReais[arestaEntrada[nodeDoCiclo]].weight;
                     solver.addLazy(nodeDoCiclo, pesoArestaCiclo);
                     solver.unirHeaps(novoSuperNo, nodeDoCiclo);
                     
-                    // Unir conjuntos no DSU
                     solver.unite(nodeDoCiclo, novoSuperNo);
                 }
 
@@ -203,7 +184,6 @@ WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
         }
     }
 
-    // Fase de Expansão
     while (!historicoCiclos.empty()) {
         EstadoCiclo ciclo = historicoCiclos.top();
         historicoCiclos.pop();
@@ -215,15 +195,10 @@ WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
         if (arestaQueEntraNoSuperNo != -1) {
             int destino = arestasReais[arestaQueEntraNoSuperNo].w; 
             
-            // Busca qual componente do ciclo é ancestral do destino
-            // Isso lida corretamente com ciclos aninhados
             int ancestral = destino;
             bool achou = false;
             
-            // Como paiHierarquia sobe na árvore de super-nós,
-            // verificamos se algum ancestral do 'destino' pertence à lista deste ciclo.
             while (ancestral != -1) {
-                // Verifica se 'ancestral' está na lista de nós deste ciclo
                 for (int comp : ciclo.nosNoCiclo) {
                     if (comp == ancestral) {
                         noEntradaReal = comp;
@@ -237,7 +212,6 @@ WeightedGraph TarjanMST::obterArborescencia(WeightedGraph& grafo, int raiz) {
             }
         }
 
-        // Restaura arestas
         for (size_t k = 0; k < ciclo.nosNoCiclo.size(); ++k) {
             int componente = ciclo.nosNoCiclo[k];
             if (componente == noEntradaReal) {

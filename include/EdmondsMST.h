@@ -7,15 +7,9 @@
 
 class EdmondsMST {
 public:
-    /**
-     * Calcula a Arborescência Geradora Mínima usando a implementação
-     * de Edmonds-Chu-Liu (adaptada para suportar reconstrução de grafos
-     * de forma mais eficiente que a recursão pura).
-     */
     static WeightedGraph obterArborescencia(WeightedGraph& grafo, int raiz);
 
 private:
-    // Estruturas internas auxiliares
     struct InternalResult {
         bool success;
         std::vector<int> parent;
@@ -37,14 +31,12 @@ private:
         std::vector<std::vector<int>> cycles;
     };
 
-    // Estrutura simples para aresta interna
     struct DirectedEdgeInternal {
         int u, v;
         double cost;
         DirectedEdgeInternal(int _u=0, int _v=0, double _c=0.0) : u(_u), v(_v), cost(_c) {}
     };
 
-    // Métodos auxiliares
     static std::vector<DirectedEdgeInternal> find_cheapest_incoming_edges(WeightedGraph& graph, int root);
     
     static CycleDetectionResult detect_cycles(const std::vector<DirectedEdgeInternal>& cheapest_edges, 
@@ -52,8 +44,7 @@ private:
     
     static long long encode_edge_key(int from, int to);
 
-    // O coração do algoritmo (recursivo mas estruturado)
     static InternalResult run_chu_liu(WeightedGraph& graph, int root_vertex);
 };
 
-#endif // EDMONDS_MST_H
+#endif 

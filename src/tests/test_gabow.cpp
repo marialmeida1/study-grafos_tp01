@@ -24,22 +24,17 @@ void imprimirGabow(WeightedGraph& g) {
 int main() {
     cout << "=== Teste: Algoritmo de Gabow ===" << endl;
 
-    // Mesmo caso de teste para garantir consistência
     int V = 4;
     WeightedGraph g(V, true);
 
-    // Grafo com ciclo e múltiplas entradas
     g.insertEdge(0, 1, 10.0);
-    g.insertEdge(0, 2, 2.0);  // Caminho ótimo para entrar no ciclo
+    g.insertEdge(0, 2, 2.0);  
     g.insertEdge(0, 3, 20.0);
     
-    // Ciclo 1-2-3
     g.insertEdge(1, 2, 5.0);
     g.insertEdge(2, 3, 5.0);
     g.insertEdge(3, 1, 5.0);
 
-    // Resultado esperado: 0->2 (2), 2->3 (5), 3->1 (5) = Total 12.
-    
     WeightedGraph mst = GabowMST::obterArborescencia(g, 0);
     imprimirGabow(mst);
 

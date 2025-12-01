@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     // Threshold final: Define quão diferente os segmentos devem ser.
     // Valor 200.0 é um bom começo para fotos reais. 
     // Se a imagem ficar muito "inteira", diminua para 100 ou 150.
-    double threshold = 20.0; 
+    double threshold = 10.0; 
     
     PreprocessingOptions opts;
     opts.enableBlur = true; // Essencial para juntar texturas (pelo, grama)

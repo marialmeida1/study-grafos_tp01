@@ -19,17 +19,15 @@
 #include <queue>
 #include <map>
 #include <set>
-#include <random>
-#include <chrono>
+#include <algorithm>
 #include <tuple>
+#include <chrono>
 
 using namespace std;
 
 // --- Estruturas Auxiliares Locais ---
 
 struct Pixel { unsigned char r, g, b; };
-
-struct SimpleEdge { int u, v; double w; };
 
 // DSU Local para a etapa de pré-processamento (Superpixels)
 struct DSU_Pre {
@@ -49,60 +47,78 @@ struct DSU_Pre {
     }
 };
 
-// --- Métodos de Ajuda ---
+// --- Métodos de Ajuda com Melhoria Perceptual (Redmean) ---
 
-// Calcula diferença de cor entre dois índices de pixel
+// Fórmula Redmean: muito melhor que Euclideana simples para o olho humano
+double getRedmeanDiff(long r1, long g1, long b1, long r2, long g2, long b2) {
+    long rmean = (r1 + r2) / 2;
+    long r = r1 - r2;
+    long g = g1 - g2;
+    long b = b1 - b2;
+    return sqrt( (((512+rmean)*r*r)>>8) + 4*g*g + (((767-rmean)*b*b)>>8) );
+}
+
+// Wrapper para acessar bytes brutos da imagem
 double getPixelDiff(const unsigned char* img, int idx1, int idx2, int channels) {
     int p1 = idx1 * channels;
     int p2 = idx2 * channels;
-    double sum = 0.0;
-    for(int c=0; c<3; ++c) {
-        double d = (double)img[p1+c] - (double)img[p2+c];
-        sum += d*d;
-    }
-    return sqrt(sum);
+    return getRedmeanDiff(img[p1], img[p1+1], img[p1+2], 
+                          img[p2], img[p2+1], img[p2+2]);
 }
 
-// Calcula diferença entre duas cores médias (Tuplas RGB)
+// Wrapper para tuplas (usado no grafo principal)
 double getColorDiff(const tuple<int,int,int>& c1, const tuple<int,int,int>& c2) {
     auto [r1, g1, b1] = c1;
     auto [r2, g2, b2] = c2;
-    return sqrt(pow(r1-r2, 2) + pow(g1-g2, 2) + pow(b1-b2, 2));
+    return getRedmeanDiff(r1, g1, b1, r2, g2, b2);
 }
 
-// Suavização simples (Box Blur 3x3)
+// Suavização Gaussiana 5x5 (Melhor que a média simples)
 void suavizarImagem(unsigned char* img, int w, int h, int channels) {
-    if(channels < 3) return; // Suporta apenas RGB/RGBA
+    if(channels < 3) return; 
     vector<unsigned char> buffer(w * h * channels);
-    
-    int dx[] = {0, 1, -1, 0, 0};
-    int dy[] = {0, 0, 0, 1, -1};
 
-    for(int y=0; y<h; ++y) {
-        for(int x=0; x<w; ++x) {
-            long long sum[3] = {0,0,0};
-            int count = 0;
+    // Kernel Gaussiano 5x5 aproximado
+    float kernel[5][5] = {
+        {1, 4, 6, 4, 1},
+        {4, 16, 24, 16, 4},
+        {6, 24, 36, 24, 6},
+        {4, 16, 24, 16, 4},
+        {1, 4, 6, 4, 1}
+    };
+    float kernelSum = 256.0f;
+
+    // Ignora bordas para simplificar (crop de 2px não afeta o resultado visual)
+    for(int y=2; y<h-2; ++y) {
+        for(int x=2; x<w-2; ++x) {
+            float sum[3] = {0,0,0};
             
-            for(int k=0; k<5; ++k) {
-                int nx = x + dx[k];
-                int ny = y + dy[k];
-                if(nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                    int idx = (ny * w + nx) * channels;
-                    for(int c=0; c<3; ++c) sum[c] += img[idx+c];
-                    count++;
+            for(int ky=-2; ky<=2; ++ky) {
+                for(int kx=-2; kx<=2; ++kx) {
+                    int idx = ((y+ky) * w + (x+kx)) * channels;
+                    float weight = kernel[ky+2][kx+2];
+                    sum[0] += img[idx] * weight;
+                    sum[1] += img[idx+1] * weight;
+                    sum[2] += img[idx+2] * weight;
                 }
             }
-            int currentIdx = (y * w + x) * channels;
-            for(int c=0; c<3; ++c) buffer[currentIdx+c] = sum[c]/count;
+            
+            int idx = (y * w + x) * channels;
+            for(int c=0; c<3; ++c) 
+                buffer[idx+c] = (unsigned char)(sum[c] / kernelSum);
         }
     }
-    // Copia de volta
-    for(size_t i=0; i<buffer.size(); ++i) img[i] = buffer[i];
+    // Copia de volta, mantendo as bordas originais intactas onde não calculamos
+    for(int y=2; y<h-2; ++y) {
+        for(int x=2; x<w-2; ++x) {
+            int idx = (y * w + x) * channels;
+            for(int c=0; c<3; ++c) img[idx+c] = buffer[idx+c];
+        }
+    }
 }
 
-// --- Implementação Principal Refatorada ---
+// --- Implementação Principal ---
 
-// AQUI ESTAVA O ERRO: Adicionado "PreprocessingOptions options" ao final
 void ImageSegmentation::runSegmentation(const string& inputPath, const string& outputPath, Strategy strategy, double threshold, PreprocessingOptions options) {
     // 1. Carregar Imagem
     int w, h, ch;
@@ -112,22 +128,23 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
     int numPixels = w * h;
     cout << "[" << inputPath << "] " << w << "x" << h << " pixels." << endl;
 
-    // --- ETAPA A: Pré-processamento (Melhoria da Referência) ---
-    cout << "1. Aplicando suavizacao..." << endl;
-    
-    // Você pode usar 'options' aqui no futuro se quiser controlar a suavização
-    suavizarImagem(img, w, h, ch);
+    // --- ETAPA A: Pré-processamento ---
+    if (options.enableBlur) {
+        cout << "1. Aplicando Gaussian Blur..." << endl;
+        suavizarImagem(img, w, h, ch);
+    }
 
-    // --- ETAPA B: Geração de Superpixels (Melhoria da Referência) ---
+    // --- ETAPA B: Geração de Superpixels ---
     cout << "2. Gerando Superpixels..." << endl;
     DSU_Pre dsu(numPixels);
-    double preThreshold = 15.0; // Pixels muito parecidos viram um só nó
+    
+    // Usa o valor definido nas opções ou um padrão seguro
+    double preThreshold = (options.minSuperpixelSize > 0) ? options.minSuperpixelSize : 40.0;
 
     // Conecta vizinhos muito similares
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             int u = y * w + x;
-            // Tenta conectar com Direita e Baixo
             if (x + 1 < w) {
                 int v = y * w + (x + 1);
                 if (getPixelDiff(img, u, v, ch) < preThreshold) dsu.unite(u, v);
@@ -139,7 +156,7 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         }
     }
 
-    // Identifica e Mapeia Superpixels
+    // Mapeamento Pixel -> Superpixel
     map<int, int> rootToSuperId;
     vector<int> pixelToSuper(numPixels);
     vector<long long> sumR(numPixels, 0), sumG(numPixels, 0), sumB(numPixels, 0);
@@ -154,7 +171,6 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         int sId = rootToSuperId[root];
         pixelToSuper[i] = sId;
         
-        // Acumula cor
         int idx = i * ch;
         sumR[sId] += img[idx]; 
         sumG[sId] += img[idx+1]; 
@@ -171,17 +187,17 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
 
     cout << "   -> Reduzido de " << numPixels << " pixels para " << numSupernodes << " superpixels." << endl;
 
-    // --- ETAPA C: Construção do Grafo Reduzido ---
-    cout << "3. Construindo Grafo Reduzido..." << endl;
+    // --- ETAPA C: Construção do Grafo ---
+    cout << "3. Construindo Grafo de Adjacencia..." << endl;
     auto start = chrono::high_resolution_clock::now();
 
     bool directed = (strategy != Strategy::KRUSKAL_MST);
     WeightedGraph graph(numSupernodes, directed);
-    set<pair<int,int>> edgesAdded; // Evita múltiplas arestas entre os mesmos superpixels
+    set<pair<int,int>> edgesAdded;
 
     int dx[] = {1, 0, -1, 0};
     int dy[] = {0, 1, 0, -1};
-    int k_limite = directed ? 4 : 2; // Kruskal só precisa de 2 direções para cobrir grid
+    int k_limite = directed ? 4 : 2; 
 
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
@@ -196,7 +212,6 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
                     int vSuper = pixelToSuper[vPix];
 
                     if (uSuper != vSuper) {
-                        // Se ainda não adicionamos aresta entre esses dois blocos
                         if (edgesAdded.find({uSuper, vSuper}) == edgesAdded.end()) {
                             double w = getColorDiff(superColors[uSuper], superColors[vSuper]);
                             graph.insertEdge(uSuper, vSuper, w);
@@ -208,7 +223,7 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         }
     }
 
-    // --- ETAPA D: Execução do Algoritmo (MST/MSA) ---
+    // --- ETAPA D: Algoritmo MST/MSA ---
     cout << "4. Executando Algoritmo..." << endl;
     WeightedGraph resultGraph(numSupernodes, directed);
     int root = 0; 
@@ -217,7 +232,6 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         resultGraph = KruskalMST::obterArvoreGeradoraMinima(graph);
     } 
     else if (strategy == Strategy::EDMONDS_MSA) {
-        // Agora Edmonds vai rodar rápido, pois N é pequeno (~1000 nós)
         resultGraph = EdmondsMST::obterArborescencia(graph, root);
     }
     else if (strategy == Strategy::TARJAN_MSA) {
@@ -231,12 +245,11 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
     chrono::duration<double> elapsed = end - start;
     cout << "   -> Tempo Algoritmo: " << elapsed.count() << "s" << endl;
 
-    // --- ETAPA E: Segmentação Final (Corte e Pintura) ---
+    // --- ETAPA E: Segmentação e Pintura (Average Color) ---
     cout << "5. Gerando Imagem Final..." << endl;
     
-    // Lista de adjacência do grafo resultante (após corte)
+    // Lista de adjacência baseada no threshold final
     vector<vector<int>> adj(numSupernodes);
-    
     for(int i=0; i<numSupernodes; ++i) {
         WeightedGraph::AdjIterator it(resultGraph, i);
         WeightedEdge e = it.begin();
@@ -250,24 +263,15 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         }
     }
 
-    // BFS nos Supernodes
+    // BFS para identificar componentes conexos (segmentos finais)
     vector<int> superToSegment(numSupernodes, -1);
     int segmentCount = 0;
     
-    // Cores aleatórias para os segmentos
-    vector<Pixel> segmentColors;
-    mt19937 rng(42);
-    uniform_int_distribution<int> uni(0, 255);
-
     for(int i=0; i<numSupernodes; ++i) {
         if(superToSegment[i] == -1) {
             queue<int> q;
             q.push(i);
             superToSegment[i] = segmentCount;
-            
-            // Gera cor para este novo segmento
-            segmentColors.push_back({(unsigned char)uni(rng), (unsigned char)uni(rng), (unsigned char)uni(rng)});
-
             while(!q.empty()) {
                 int u = q.front(); q.pop();
                 for(int v : adj[u]) {
@@ -281,18 +285,49 @@ void ImageSegmentation::runSegmentation(const string& inputPath, const string& o
         }
     }
 
-    // Monta imagem de saída mapeando Pixel -> Superpixel -> Segmento -> Cor
+    // --- MELHORIA VISUAL: Pintar com a cor média do segmento ---
+    // Em vez de cor aleatória, calculamos a média real dos pixels daquele segmento
+    vector<long long> segR(segmentCount, 0), segG(segmentCount, 0), segB(segmentCount, 0);
+    vector<int> segPixelCount(segmentCount, 0);
+
+    for(int i=0; i<numPixels; ++i) {
+        int sId = pixelToSuper[i];
+        int segId = superToSegment[sId];
+        if(segId == -1) continue;
+
+        int idx = i * ch;
+        segR[segId] += img[idx];
+        segG[segId] += img[idx+1];
+        segB[segId] += img[idx+2];
+        segPixelCount[segId]++;
+    }
+
+    vector<Pixel> finalColors(segmentCount);
+    for(int i=0; i<segmentCount; ++i) {
+        if(segPixelCount[i] > 0) {
+            finalColors[i] = {
+                (unsigned char)(segR[i] / segPixelCount[i]),
+                (unsigned char)(segG[i] / segPixelCount[i]),
+                (unsigned char)(segB[i] / segPixelCount[i])
+            };
+        } else {
+            finalColors[i] = {0, 0, 0};
+        }
+    }
+
+    // Gera o buffer de saída
     vector<unsigned char> outData(w * h * ch);
     for(int i=0; i<numPixels; ++i) {
         int sId = pixelToSuper[i];
         int segId = superToSegment[sId];
-        if(segId == -1) segId = 0; // fallback
+        if(segId == -1) segId = 0;
 
-        Pixel p = segmentColors[segId];
+        Pixel p = finalColors[segId];
         int idx = i * ch;
         outData[idx] = p.r;
         outData[idx+1] = p.g;
         outData[idx+2] = p.b;
+        if(ch == 4) outData[idx+3] = 255;
     }
 
     cout << "   -> Total Segmentos: " << segmentCount << endl;
