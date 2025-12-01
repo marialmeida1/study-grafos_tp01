@@ -5,7 +5,7 @@
 int main(int argc, char** argv) {
     // Permite passar a imagem via linha de comando ou usa o padrão
     std::string inputImage = (argc > 1) ? argv[1] : "input.jpg"; // Certifique-se de ter essa imagem
-    double threshold = 50.0; // Ajuste este valor (30.0 a 80.0) para controlar a sensibilidade
+    double threshold = 4.0;
 
     std::cout << "=== BENCHMARK DE SEGMENTACAO ===" << std::endl;
     std::cout << "Imagem Alvo: " << inputImage << std::endl;
